@@ -1,0 +1,61 @@
+1. Introduction to Lit
+======================
+Lit is a modern, lightweight library for building fast, reusable web components using standard Web Components APIs. It provides a declarative, reactive programming model that simplifies the creation of custom elements with encapsulated styles, templating, and reactivity. Lit is built on top of the Web Components standard and is designed to be interoperable, efficient, and easy to use.
+
+2. Lit Philosophy and Mental Model
+==================================
+Lit embraces the native Web Components standard and enhances it with a minimal layer of syntactic and reactive sugar. The core philosophy is to stay close to the platform, avoid unnecessary abstractions, and provide a small, composable set of tools that work well together. Developers are encouraged to think in terms of encapsulated components, declarative templates, and reactive state management.
+
+18. Quin’s Conventions (file structure, decorators, templates, documentation, tooling, testing, accessibility, performance)
+===========================================================================================================================
+Quin's conventions are a set of structured practices designed to enforce consistency, readability, and maintainability in Lit-based projects. These include:
+
+- File Structure: Each component is split into multiple files: `Component.ts` for logic, `component.styles.ts` for styles, and `icon-name.svg.ts` for SVG assets.
+- Decorators: Always use decorators on their own line. Define attributes explicitly using `@property({ attribute: '...' })`.
+- Templates: Use `nothing` from Lit for conditional rendering instead of `null`. Avoid inline logic in templates.
+- Documentation: Use JSDoc for all public APIs. Include usage examples, CSS parts, and exported members.
+- Tooling: Use Vite for applications and Nx for libraries. Prefer native browser APIs.
+- Testing: Follow snapshot-safe rendering patterns. Test events and shadow DOM behavior explicitly.
+- Accessibility: Implement ARIA roles, keyboard navigation, and focus management.
+- Performance: Use memoization, render boundaries, and directive-based optimizations.
+
+19. Examples and Best Practices
+===============================
+Example: A simple button component
+
+```ts
+// my-button.ts
+import { LitElement, html, css, nothing } from 'lit';
+import { property } from 'lit/decorators.js';
+
+export class MyButton extends LitElement {
+  static styles = css\`
+    button {
+      background: var(--button-bg, blue);
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+    }
+  \`;
+
+  @property({ type: Boolean, reflect: true }) disabled = false;
+
+  render() {
+    return html\`
+      <button ?disabled=\${this.disabled}>
+        <slot></slot>
+      </button>
+    \`;
+  }
+}
+
+customElements.define('my-button', MyButton);
+```
+
+Best Practices:
+- Keep components focused and single-purpose.
+- Use slots for content projection.
+- Reflect attributes when needed for styling or accessibility.
+- Avoid unnecessary re-renders by using reactive primitives wisely.
+

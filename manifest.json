@@ -1,0 +1,59 @@
+{
+  "manifest_version": 3,
+  "name": "Media Server Connector",
+  "description": "Connect to your Emby/Jellyfin media server from IMDb, Trakt, Netflix, Amazon, and search engines. Request missing media via Jellyseerr.",
+  "version": "0.1.0",
+  "permissions": ["storage", "activeTab", "cookies"],
+  "optional_permissions": [],
+  "optional_host_permissions": ["*://*/*"],
+  "host_permissions": [
+    "https://www.imdb.com/*",
+    "https://trakt.tv/*",
+    "https://*.trakt.tv/*",
+    "https://www.netflix.com/*",
+    "https://www.amazon.com/*",
+    "https://www.primevideo.com/*",
+    "https://www.google.com/*",
+    "https://www.bing.com/*"
+  ],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.imdb.com/title/*",
+        "https://trakt.tv/movies/*",
+        "https://trakt.tv/shows/*",
+        "https://*.trakt.tv/movies/*",
+        "https://*.trakt.tv/shows/*",
+        "https://www.netflix.com/title/*",
+        "https://www.amazon.com/*/dp/*",
+        "https://www.primevideo.com/detail/*",
+        "https://www.google.com/search*",
+        "https://www.bing.com/search*"
+      ],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
