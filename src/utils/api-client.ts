@@ -89,8 +89,19 @@ export const searchByProviderId = async (
   const baseUrl = await getResolvedBaseUrl(config);
   const params = new URLSearchParams({
     Recursive: "true",
-    [`Any${providerName}Id`]: providerId,
   });
+
+  if (config.server.serverType === "emby") {
+    // Emby uses AnyProviderIdEquals with format "prov.id"
+    // e.g. "Tmdb.419946" or "Imdb.tt1234567"
+    params.set(
+      "AnyProviderIdEquals",
+      `${providerName}.${providerId}`,
+    );
+  } else {
+    // Jellyfin uses AnyTmdbId / AnyImdbId
+    params.set(`Any${providerName}Id`, providerId);
+  }
 
   const response = await fetch(`${baseUrl}/Items?${params.toString()}`, {
     headers: buildApiHeaders(config),

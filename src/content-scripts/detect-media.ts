@@ -271,6 +271,7 @@ const detectFromGoogle = (): DetectedMedia | undefined => {
   const yearMatch = typeText.match(/\b(19|20)\d{2}\b/);
   const year = yearMatch ? parseInt(yearMatch[0], 10) : undefined;
 
+  // Explicit type keywords in the subtitle
   if (
     typeText.includes("tv series") ||
     typeText.includes("tv show") ||
@@ -280,6 +281,35 @@ const detectFromGoogle = (): DetectedMedia | undefined => {
   }
 
   if (typeText.includes("film") || typeText.includes("movie")) {
+    return { type: "movie", title, year };
+  }
+
+  // Google embeds structured type info in data-maindata on the knowledge panel.
+  // e.g. ["FILM"] or "TVM" (TV Movie). Check for these signals.
+  const kpElement = document.querySelector<HTMLElement>("[data-maindata]");
+  if (kpElement) {
+    const maindata = kpElement.getAttribute("data-maindata")?.toUpperCase() ?? "";
+    if (maindata.includes('"TV_SERIES"') || maindata.includes('"TV_SHOW"')) {
+      return { type: "series", title, year };
+    }
+    if (maindata.includes('"FILM"') || maindata.includes('"TVM"')) {
+      return { type: "movie", title, year };
+    }
+  }
+
+  // Fallback: runtime pattern in subtitle (e.g. "1h 42m", "2h 15m") indicates media.
+  // Also check for genre-based data-attrid like "kc:/film/film:cast".
+  const hasRuntime = /\d+h\s*\d*m/.test(typeText);
+  const hasFilmAttrib = !!document.querySelector('[data-attrid^="kc:/film/"]');
+  const hasTvAttrib = !!document.querySelector(
+    '[data-attrid^="kc:/tv.tv_show/"], [data-attrid^="kc:/tv/"]',
+  );
+
+  if (hasTvAttrib) {
+    return { type: "series", title, year };
+  }
+
+  if (hasFilmAttrib || hasRuntime) {
     return { type: "movie", title, year };
   }
 

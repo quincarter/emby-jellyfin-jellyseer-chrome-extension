@@ -11,7 +11,20 @@ export type ExtensionMessage =
   | GetConfigMessage
   | GetConfigResponse
   | SaveConfigMessage
-  | SaveConfigResponse;
+  | SaveConfigResponse
+  | OpenTabMessage;
+
+/**
+ * Request to open a URL in a new tab via the service worker.
+ * This bypasses SameSite cookie restrictions that prevent
+ * cross-site link clicks from carrying session cookies.
+ */
+export interface OpenTabMessage {
+  readonly type: "OPEN_TAB";
+  readonly payload: {
+    readonly url: string;
+  };
+}
 
 /**
  * Request to check if media exists on the server.

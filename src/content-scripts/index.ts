@@ -646,53 +646,38 @@ const buildResultRow = (
     gap: "6px",
   });
 
-  if (item.status === "available") {
-    /* "Open in [server]" → opens the media server web UI */
+  /* Server-type-based button colors: Emby = green, Jellyfin = purple */
+  const isJellyfin = serverLabel === "Jellyfin";
+  const serverBtnBg = isJellyfin ? "#7B2FBE" : "#4CAF50";
+  const serverBtnHover = isJellyfin ? "#5E1F9B" : "#388E3C";
+
+  if (item.status === "available" || item.status === "partial") {
+    /* "Play on [server]" → opens the media server web UI (deep link). */
     if (item.serverItemUrl) {
       const serverBtn = createActionButton(
-        "▶ Open in " + serverLabel,
-        "#4CAF50",
-        "#388E3C",
+        "▶ Play on " + serverLabel,
+        serverBtnBg,
+        serverBtnHover,
       );
       serverBtn.addEventListener("click", () => {
         window.open(item.serverItemUrl, "_blank");
       });
       btnContainer.appendChild(serverBtn);
     }
-    /* "Manage in Jellyseerr" → opens the Jellyseerr detail page */
+    /* "Manage in Jellyseerr" → opens via service worker to bypass SameSite cookies */
     if (jellyseerrUrl) {
       const slug = item.mediaType === "movie" ? "movie" : "tv";
-      const manageLink = createActionLink(
+      const manageBtn = createActionButton(
         "Manage in Jellyseerr",
-        `${jellyseerrUrl}/${slug}/${item.id}`,
         "#7B2FBE",
         "#5E1F9B",
       );
-      btnContainer.appendChild(manageLink);
-    }
-  } else if (item.status === "partial") {
-    /* "Open in [server]" → opens the media server web UI */
-    if (item.serverItemUrl) {
-      const serverBtn = createActionButton(
-        "▶ Open in " + serverLabel,
-        "#FF9800",
-        "#E65100",
-      );
-      serverBtn.addEventListener("click", () => {
-        window.open(item.serverItemUrl, "_blank");
+      manageBtn.addEventListener("click", () => {
+        const url = `${jellyseerrUrl}/${slug}/${item.id}`;
+        console.log("[Media Connector] Opening via service worker:", url);
+        sendMessage({ type: "OPEN_TAB", payload: { url } });
       });
-      btnContainer.appendChild(serverBtn);
-    }
-    /* "Manage in Jellyseerr" → opens the Jellyseerr detail page */
-    if (jellyseerrUrl) {
-      const slug = item.mediaType === "movie" ? "movie" : "tv";
-      const manageLink = createActionLink(
-        "Manage in Jellyseerr",
-        `${jellyseerrUrl}/${slug}/${item.id}`,
-        "#7B2FBE",
-        "#5E1F9B",
-      );
-      btnContainer.appendChild(manageLink);
+      btnContainer.appendChild(manageBtn);
     }
   } else if (item.status === "pending" || item.status === "processing") {
     const pendingBtn = createActionButton(
@@ -766,47 +751,6 @@ const buildStatusBadge = (status: JellyseerrResultItem["status"]): string => {
 };
 
 /**
- * Create a styled action link (<a> tag) that opens in a new tab.
- * Styled identically to action buttons.
- */
-const createActionLink = (
-  text: string,
-  href: string,
-  bg: string,
-  hoverBg: string,
-): HTMLAnchorElement => {
-  const link = document.createElement("a");
-  link.textContent = text;
-  link.href = href;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  link.addEventListener("click", () => {
-    console.log("[Media Connector] Manage link clicked:", href);
-  });
-  Object.assign(link.style, {
-    display: "inline-block",
-    padding: "5px 12px",
-    border: "none",
-    borderRadius: "6px",
-    background: bg,
-    color: "#fff",
-    fontSize: "12px",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "background 0.15s",
-    lineHeight: "1.4",
-    textDecoration: "none",
-  });
-  link.addEventListener("mouseenter", () => {
-    link.style.background = hoverBg;
-  });
-  link.addEventListener("mouseleave", () => {
-    link.style.background = bg;
-  });
-  return link;
-};
-
-/**
  * Create a styled action button.
  */
 const createActionButton = (
@@ -874,7 +818,7 @@ const requestFromSidebar = async (
 /**
  * Append the sidebar card to the appropriate location in Google or Bing.
  *
- * Google: insert into the right-hand knowledge panel column (`#rhs`).
+ * Google: insert above the first search result in the center column.
  * Bing:   full-width card above AI-generated content (`#b_results`).
  * Fallback: fixed-position panel on the right.
  */
@@ -882,10 +826,27 @@ const appendSidebarToPage = (card: HTMLDivElement): void => {
   const site = identifySite(window.location.href);
 
   if (site === "google") {
-    // Google's right-hand side container
-    const rhs = document.getElementById("rhs");
-    if (rhs) {
-      rhs.prepend(card);
+    // Make the card span the full content width
+    card.style.maxWidth = "100%";
+    card.style.width = "100%";
+    card.style.boxSizing = "border-box";
+
+    // Try inserting above the organic search results (#rso)
+    const rso = document.getElementById("rso");
+    if (rso) {
+      rso.parentElement?.insertBefore(card, rso);
+      return;
+    }
+    // Fallback: prepend into #center_col (the main results column)
+    const centerCol = document.getElementById("center_col");
+    if (centerCol) {
+      centerCol.prepend(card);
+      return;
+    }
+    // Fallback: prepend into #search
+    const search = document.getElementById("search");
+    if (search) {
+      search.prepend(card);
       return;
     }
   }

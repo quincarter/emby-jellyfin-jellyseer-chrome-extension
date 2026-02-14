@@ -17,6 +17,7 @@ import {
 import type { DetectedMedia, ExtensionConfig } from "../types/index.js";
 import type {
   CheckMediaMessage,
+  OpenTabMessage,
   RequestMediaMessage,
   SearchJellyseerrMessage,
   SaveConfigMessage,
@@ -69,6 +70,9 @@ const handleMessage = async (
 
     case "TEST_JELLYSEERR":
       return handleTestJellyseerr();
+
+    case "OPEN_TAB":
+      return handleOpenTab(message as OpenTabMessage);
 
     default:
       return {
@@ -418,11 +422,21 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
         ) {
           try {
             const tmdbId = String(r.id);
+            console.log(
+              "[Media Connector] Looking up server item for TMDb ID:",
+              tmdbId,
+              "resolvedUrl:",
+              resolvedUrl,
+            );
             const serverResults = await withTimeout(
               searchByProviderId(config, tmdbId, "Tmdb"),
               5000,
             );
-            const match = serverResults?.Items[0];
+            console.log(
+              "[Media Connector] Server lookup results:",
+              JSON.stringify(serverResults),
+            );
+            const match = serverResults?.Items?.[0];
             if (match) {
               const serverIdParam = match.ServerId
                 ? `&serverId=${match.ServerId}`
@@ -431,6 +445,15 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
                 config.server.serverType === "jellyfin"
                   ? `${resolvedUrl}/web/#/details?id=${match.Id}${serverIdParam}`
                   : `${resolvedUrl}/web/index.html#!/item?id=${match.Id}${serverIdParam}`;
+              console.log(
+                "[Media Connector] Built serverItemUrl:",
+                serverItemUrl,
+              );
+            } else {
+              console.warn(
+                "[Media Connector] No matching server item found for TMDb ID:",
+                tmdbId,
+              );
             }
           } catch (e) {
             console.warn(
@@ -438,6 +461,15 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
               e,
             );
           }
+        } else {
+          console.log(
+            "[Media Connector] Skipping server item lookup — status:",
+            status,
+            "serverConfigured:",
+            serverConfigured,
+            "resolvedUrl:",
+            resolvedUrl,
+          );
         }
 
         return {
@@ -476,6 +508,16 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
       },
     };
   }
+};
+
+/**
+ * Open a URL in a new tab via the service worker.
+ * This creates a direct navigation that bypasses SameSite cookie
+ * restrictions which block session cookies on cross-site link clicks.
+ */
+const handleOpenTab = async (message: OpenTabMessage) => {
+  await chrome.tabs.create({ url: message.payload.url });
+  return { type: "OPEN_TAB_RESPONSE", payload: { success: true } };
 };
 
 // Log service worker activation
