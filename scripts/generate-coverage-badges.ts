@@ -82,19 +82,24 @@ const generateE2EBadge = (): void => {
   });
 };
 
-// Vitest coverage
-generateFromSummary(
-  'vitest',
-  'Vitest coverage',
-  resolve(ROOT, 'coverage', 'vitest', 'coverage-summary.json'),
-);
+const target = process.argv[2];
 
-// WTR coverage
-generateFromSummary(
-  'wtr',
-  'WTR coverage',
-  resolve(ROOT, 'coverage', 'wtr', 'coverage-summary.json'),
-);
+if (!target || target === 'vitest') {
+  generateFromSummary(
+    'vitest',
+    'Vitest coverage',
+    resolve(ROOT, 'coverage', 'vitest', 'coverage-summary.json'),
+  );
+}
 
-// Playwright E2E pass rate
-generateE2EBadge();
+if (!target || target === 'wtr') {
+  generateFromSummary(
+    'wtr',
+    'WTR coverage',
+    resolve(ROOT, 'coverage', 'wtr', 'coverage-summary.json'),
+  );
+}
+
+if (!target || target === 'e2e') {
+  generateE2EBadge();
+}
