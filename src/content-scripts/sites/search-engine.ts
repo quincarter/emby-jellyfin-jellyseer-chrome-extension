@@ -1,12 +1,7 @@
-import {
-  COMBINED_SVG,
-  sendMessage,
-  createInfoRow,
-  buildResultRow,
-  injectSkeletonKeyframes,
-} from '../common-ui.js';
+import { sendMessage, injectSkeletonKeyframes, COMBINED_SVG } from '../common-ui.js';
 import { tryDetectMedia, identifySite } from '../index.js';
 import type { SearchJellyseerrResponse, GetConfigResponse } from '../../types/messages.js';
+import '../../components/search-sidebar/search-sidebar.js';
 
 const SIDEBAR_ID = 'media-connector-sidebar';
 const SKELETON_ID = 'media-connector-skeleton';
@@ -59,15 +54,16 @@ const showSkeleton = (serverLabel: string): void => {
     marginBlock: '1rem',
   });
 
-  const iconHtml = COMBINED_SVG.replace(/width="48" height="48"/, 'width="32" height="32"');
-
   skeleton.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08);">
-      <div style="width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">${iconHtml}</div>
-      <div>
-        <div style="font-weight:700;font-size:15px;color:#d0bcff;">I've got this!</div>
-        <div style="font-size:11px;color:#a89cc0;margin-top:2px;">Powered by Jellyseerr &middot; ${serverLabel}</div>
+      <div style="width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border-radius:50%;"></div>
+      <div style="flex:1;">
+        <div style="width:100px;height:14px;background:rgba(255,255,255,0.1);border-radius:4px;"></div>
+        <div style="width:150px;height:10px;background:rgba(255,255,255,0.05);border-radius:4px;margin-top:4px;"></div>
       </div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:#a89cc0;margin-bottom:8px;">Powered by Jellyseerr &middot; ${serverLabel}</div>
     </div>
     <div style="display:flex;gap:12px;align-items:flex-start;">
       <div style="width:60px;height:90px;border-radius:8px;flex-shrink:0;${shimmerStyle}"></div>
@@ -80,7 +76,7 @@ const showSkeleton = (serverLabel: string): void => {
     </div>
   `;
 
-  appendSidebarToPage(skeleton as HTMLDivElement);
+  appendSidebarToPage(skeleton);
 };
 
 const removeSkeleton = (): void => {
@@ -90,85 +86,18 @@ const removeSkeleton = (): void => {
 const injectSidebar = (response: SearchJellyseerrResponse, queryTitle: string): void => {
   if (document.getElementById(SIDEBAR_ID)) return;
 
-  const { results, jellyseerrEnabled, serverType, jellyseerrUrl, error } = response.payload;
-  const serverLabel = serverType === 'jellyfin' ? 'Jellyfin' : 'Emby';
+  const sidebar = document.createElement('search-sidebar') as HTMLElement & {
+    response: SearchJellyseerrResponse;
+    queryTitle: string;
+  };
+  sidebar.id = SIDEBAR_ID;
+  sidebar.response = response;
+  sidebar.queryTitle = queryTitle;
 
-  const card = document.createElement('div');
-  card.id = SIDEBAR_ID;
-  Object.assign(card.style, {
-    fontFamily: "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-    background: 'linear-gradient(145deg, #1a1130 0%, #120d20 100%)',
-    border: '1px solid rgba(123, 47, 190, 0.35)',
-    borderRadius: '16px',
-    padding: '20px',
-    color: '#e8e0f0',
-    maxWidth: '360px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.45)',
-    marginBlock: '1rem',
-    fontSize: '14px',
-    lineHeight: '1.5',
-  });
-
-  const header = document.createElement('div');
-  Object.assign(header.style, {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '14px',
-    paddingBottom: '12px',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
-  });
-
-  const iconHtml = COMBINED_SVG.replace(/width="48" height="48"/, 'width="32" height="32"');
-
-  header.innerHTML = `
-    <div style="width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">${iconHtml}</div>
-    <div>
-      <div style="font-weight:700;font-size:15px;color:#d0bcff;">I've got this!</div>
-      <div style="font-size:11px;color:#a89cc0;margin-top:2px;">Powered by Jellyseerr · ${serverLabel}</div>
-    </div>
-  `;
-  card.appendChild(header);
-
-  if (!jellyseerrEnabled) {
-    card.appendChild(
-      createInfoRow(
-        '⚙️',
-        'Jellyseerr not configured',
-        'Open the extension popup to set your Jellyseerr URL and API key.',
-      ),
-    );
-    appendSidebarToPage(card);
-    return;
-  }
-
-  if (error) {
-    card.appendChild(createInfoRow('⚠️', 'Connection error', error));
-    appendSidebarToPage(card);
-    return;
-  }
-
-  if (results.length === 0) {
-    card.appendChild(
-      createInfoRow('🔍', 'No results', `"${queryTitle}" was not found on Jellyseerr.`),
-    );
-    appendSidebarToPage(card);
-    return;
-  }
-
-  results.forEach((item, idx) => {
-    const row = buildResultRow(item, serverLabel, jellyseerrUrl);
-    if (idx > 0) {
-      row.style.borderTop = '1px solid rgba(255,255,255,0.06)';
-      row.style.paddingTop = '12px';
-    }
-    card.appendChild(row);
-  });
-
-  appendSidebarToPage(card);
+  appendSidebarToPage(sidebar);
 };
 
-const appendSidebarToPage = (card: HTMLDivElement): void => {
+const appendSidebarToPage = (card: HTMLElement): void => {
   const site = identifySite(window.location.href);
 
   if (site === 'google') {

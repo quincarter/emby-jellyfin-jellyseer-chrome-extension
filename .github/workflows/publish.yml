@@ -43,16 +43,9 @@ jobs:
           HUSKY: 0
 
       # Build, Zip, Release and Upload if changesets published OR if we just merged a version bump
-      - name: Build extension
+      - name: Build and Pack extension
         if: steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')
-        run: yarn build:extension
-
-      - name: Zip extension
-        if: steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')
-        run: |
-          cd dist
-          zip -r ../extension.zip .
-          cd ..
+        run: yarn pack
 
       - name: Get version from package.json
         if: steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')
@@ -85,18 +78,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload to Chrome Web Store
-        if: steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')
+        if: (steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')) && secrets.CHROME_EXTENSION_ID != ''
+        env:
+          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
         run: |
           npx chrome-webstore-upload-cli@latest upload \
-            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
-            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
-            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
-            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }} \
+            --extension-id "$EXTENSION_ID" \
+            --client-id "$CLIENT_ID" \
+            --client-secret "$CLIENT_SECRET" \
+            --refresh-token "$REFRESH_TOKEN" \
             --source extension.zip \
             --auto-publish
 
       - name: Upload to Edge Add-ons
-        if: steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')
+        if: (steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')) && secrets.EDGE_PRODUCT_ID != ''
         uses: wdzeng/edge-addon@v1
         with:
           product-id: ${{ secrets.EDGE_PRODUCT_ID }}

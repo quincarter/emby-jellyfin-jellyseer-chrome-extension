@@ -2,13 +2,14 @@ import { LitElement, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { Effect } from 'effect';
 import { sandboxAppStyles } from './sandbox-app.styles.js';
-import { mockScenarios } from './mock-data.js';
+import { mockScenarios, mockSearchResponses } from './mock-data.js';
 import { checkMediaAvailabilityEffect, testServerConnectionEffect } from '../utils/api-client.js';
 import { loadConfigEffect } from '../utils/storage.js';
 import type { ExtensionConfig, DetectedMedia, MediaAvailability } from '../types/index.js';
 import { DEFAULT_CONFIG } from '../types/index.js';
 import '../components/media-status-badge/media-status-badge.js';
 import '../components/popup-view/popup-view.js';
+import '../components/search-sidebar/search-sidebar.js';
 
 /**
  * Sandbox application for developing and testing components in isolation.
@@ -47,6 +48,13 @@ export class SandboxApp extends LitElement {
   override async connectedCallback(): Promise<void> {
     super.connectedCallback();
     this._config = await Effect.runPromise(loadConfigEffect);
+
+    // Listen for tab open events from components
+    this.addEventListener('media-connector-open-tab', (e: Event) => {
+      const detail = (e as CustomEvent<{ url: string }>).detail;
+      console.log('Sandbox caught OPEN_TAB event:', detail.url);
+      alert(`Component requested to open URL: ${detail.url}`);
+    });
   }
 
   render() {
@@ -54,6 +62,26 @@ export class SandboxApp extends LitElement {
       <div class="sandbox-container">
         ${this._renderHeader()}
         ${this._useRealData ? this._renderRealDataSection() : this._renderMockSection()}
+        <div class="section">
+          <h2>Search Sidebar (Google/Bing Sidebar)</h2>
+          <div class="scenario-grid">
+            <div class="scenario-card">
+              <h3>Multiple Results</h3>
+              <search-sidebar .response="${mockSearchResponses.multiple}"></search-sidebar>
+            </div>
+            <div class="scenario-card">
+              <h3>No Results</h3>
+              <search-sidebar
+                .response="${mockSearchResponses.noResults}"
+                queryTitle="Unknown Media"
+              ></search-sidebar>
+            </div>
+            <div class="scenario-card">
+              <h3>Not Configured</h3>
+              <search-sidebar .response="${mockSearchResponses.unconfigured}"></search-sidebar>
+            </div>
+          </div>
+        </div>
         ${this._renderPopupPreview()}
       </div>
     `;

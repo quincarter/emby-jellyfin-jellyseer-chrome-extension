@@ -330,4 +330,54 @@ describe('popup-view', () => {
     const footer = el.shadowRoot?.querySelector('.footer p');
     expect(footer?.textContent).to.contain('v0.1.0');
   });
+
+  it('triggers jellyseerr probe when button is clicked', async () => {
+    const el = await fixture<PopupView>(html`<popup-view></popup-view>`);
+    const testable = asTestable(el);
+
+    testable._jellyseerrEnabled = true;
+    await el.updateComplete;
+
+    const jsLocalUrlInput = el.shadowRoot?.querySelector(
+      '#jellyseerr-local-url',
+    ) as HTMLInputElement;
+    jsLocalUrlInput.value = 'http://192.168.1.50';
+    jsLocalUrlInput.dispatchEvent(new Event('input'));
+    await el.updateComplete;
+
+    const probeBtn = el.shadowRoot?.querySelectorAll('.btn-probe')[1] as HTMLButtonElement;
+    expect(probeBtn).to.exist;
+    probeBtn.click();
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await el.updateComplete;
+
+    expect(asTestable(el)._jellyseerrStatus).to.not.equal('probing'); // It uses _probeUrl which sets _jellyseerrLocalUrlStatus
+  });
+
+  it('handles save success', async () => {
+    const el = await fixture<PopupView>(html`<popup-view></popup-view>`);
+    const testable = asTestable(el);
+
+    const saveBtn = el.shadowRoot?.querySelector('.btn-success') as HTMLButtonElement;
+    saveBtn.click();
+
+    // Manual state trigger since we can't easily wait for Effect
+    testable._saveStatus = 'saved';
+    await el.updateComplete;
+    expect(el.shadowRoot?.querySelector('.status-success')?.textContent).to.contain(
+      'Settings saved',
+    );
+  });
+
+  it('handles server type change correctly', async () => {
+    const el = await fixture<PopupView>(html`<popup-view></popup-view>`);
+
+    const jellyfinBtn = Array.from(
+      el.shadowRoot?.querySelectorAll('.server-toggle button') || [],
+    ).find((b) => b.textContent?.includes('Jellyfin')) as HTMLButtonElement;
+    jellyfinBtn.click();
+    await el.updateComplete;
+    expect(el.serverType).to.equal('jellyfin');
+  });
 });

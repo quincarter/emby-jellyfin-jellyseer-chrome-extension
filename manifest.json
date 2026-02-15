@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "I've got this!",
-  "description": "Automatically check if the movies and TV shows you find on IMDb, Trakt, Netflix, Amazon, and JustWatch are available on your private Emby or Jellyfin server. Integrated with Jellyseerr for one-click requests of missing media.",
+  "description": "Check if movies and TV shows on IMDb, Trakt, Netflix, and more are on your Emby/Jellyfin server. Integrated with Jellyseerr.",
   "version": "0.1.0",
   "permissions": ["storage", "activeTab", "cookies"],
   "optional_permissions": [],

@@ -146,3 +146,63 @@ export const mockScenarios: MockMediaScenario[] = [
     },
   },
 ];
+
+import type { SearchJellyseerrResponse } from '../types/messages.js';
+
+export const mockSearchResponses: Record<string, SearchJellyseerrResponse> = {
+  multiple: {
+    type: 'SEARCH_JELLYSEERR_RESPONSE',
+    payload: {
+      results: [
+        {
+          id: 603,
+          title: 'The Matrix',
+          year: 1999,
+          mediaType: 'movie',
+          status: 'available',
+          overview: 'Cool movie',
+          posterUrl: 'https://image.tmdb.org/t/p/w92/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
+          serverItemUrl: 'https://emby.example.com/item/1',
+        },
+        {
+          id: 1396,
+          title: 'Breaking Bad',
+          year: 2008,
+          mediaType: 'tv',
+          status: 'partial',
+          overview: 'Science teacher cooks stuff',
+          posterUrl: 'https://image.tmdb.org/t/p/w92/ztkUQv9Z19DMp3mHrgbfYzbqh96.jpg',
+          serverItemUrl: 'https://emby.example.com/item/2',
+        },
+        {
+          id: 456,
+          title: 'Future Movie',
+          year: 2026,
+          mediaType: 'movie',
+          status: 'not_requested',
+          overview: 'Coming soon',
+          posterUrl: undefined,
+        },
+      ],
+      jellyseerrEnabled: true,
+      serverType: 'emby',
+      jellyseerrUrl: 'https://jellyseerr.example.com',
+    },
+  },
+  unconfigured: {
+    type: 'SEARCH_JELLYSEERR_RESPONSE',
+    payload: {
+      results: [],
+      jellyseerrEnabled: false,
+      serverType: 'emby',
+    },
+  },
+  noResults: {
+    type: 'SEARCH_JELLYSEERR_RESPONSE',
+    payload: {
+      results: [],
+      jellyseerrEnabled: true,
+      serverType: 'jellyfin',
+    },
+  },
+};
