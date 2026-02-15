@@ -44,6 +44,16 @@ A Chrome Extension that connects to self-hosted Emby/Jellyfin media servers, det
 <img width="1840" height="1196" alt="Screenshot 2026-02-14 at 7 20 41 PM" src="https://github.com/user-attachments/assets/28f908dc-b934-482e-9cae-ec39cbfc22f8" />
 <img width="1840" height="1196" alt="Screenshot 2026-02-14 at 8 32 05 PM" src="https://github.com/user-attachments/assets/233b3e16-d86c-4602-b51a-a62cc6661380" />
 
+# Tech Stack
+
+- Lit Element
+- TypeScript
+- Chromium Extension manifest v3
+- Vite
+- Vitest (for content scripts)
+- Web Test Runner (for components)
+- PlayWright for E2E
+
 ## Development
 
 ```bash
