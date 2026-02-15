@@ -87,12 +87,12 @@ jobs:
       - name: Upload to Chrome Web Store
         if: steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')
         run: |
-          npx chrome-extension-upload-cli@latest upload \
+          npx chrome-webstore-upload-cli@latest upload \
             --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
             --client-id ${{ secrets.CHROME_CLIENT_ID }} \
             --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
             --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }} \
-            --file extension.zip \
+            --source extension.zip \
             --auto-publish
 
       - name: Upload to Edge Add-ons
