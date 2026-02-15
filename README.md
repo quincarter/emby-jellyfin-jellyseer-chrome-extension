@@ -107,12 +107,25 @@ This project uses [Changesets](https://github.com/changesets/changesets) to auto
 
 ### Prerequisites
 
-To allow the automated versioning to work, you must enable the following setting in your GitHub repository:
+To allow the automated versioning to work, you must:
 
-1.  Navigate to **Settings > Actions > General**.
-2.  Scroll down to **Workflow permissions**.
-3.  Check the box for **"Allow GitHub Actions to create and approve pull requests"**.
-4.  Click **Save**.
+1.  **Enable PR Permissions:**
+    - Navigate to **Settings > Actions > General**.
+
+    - Scroll down to **Workflow permissions**.
+
+    - Check the box for **"Allow GitHub Actions to create and approve pull requests"**.
+
+    - Click **Save**.
+
+2.  **Add a Personal Access Token (Optional but Recommended):**
+    - The default `GITHUB_TOKEN` cannot trigger other workflows (like tests/linting) on the automated release PR.
+
+    - To fix this, create a [Personal Access Token (classic)](https://github.com/settings/tokens/new) with `repo` and `workflow` scopes.
+
+    - Add it as a Repository Secret named **`CHANGESET_TOKEN`** (**Settings > Secrets and variables > Actions**).
+
+    - If this secret is missing, the workflow will fall back to `GITHUB_TOKEN`, but CI checks won't fire on release PRs.
 
 ### Release Workflow
 

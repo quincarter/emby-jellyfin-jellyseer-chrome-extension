@@ -38,7 +38,8 @@ jobs:
           # Since "private": true is set in package.json, it will only create tags.
           publish: yarn changeset publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use a custom PAT if available to trigger other workflows
+          GITHUB_TOKEN: ${{ secrets.CHANGESET_TOKEN || secrets.GITHUB_TOKEN }}
           HUSKY: 0
 
       # Build, Zip, Release and Upload only if changesets actually published (tagged)
