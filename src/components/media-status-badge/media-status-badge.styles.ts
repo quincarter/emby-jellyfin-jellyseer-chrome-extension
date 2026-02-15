@@ -17,6 +17,8 @@ export const mediaStatusBadgeStyles: CSSResultOrNative[] = [
       align-items: center;
       gap: var(--space-sm);
       padding: var(--space-sm) var(--space-md);
+      min-height: 44px;
+      box-sizing: border-box;
       border-radius: var(--radius-md);
       font-family:
         system-ui,

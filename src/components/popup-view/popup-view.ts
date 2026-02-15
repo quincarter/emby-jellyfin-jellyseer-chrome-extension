@@ -10,6 +10,7 @@ import { probeServerUrlEffect, clearResolvedUrlCacheEffect } from '../../utils/u
 import { embyIcon } from '../../assets/emby-icon.svg.js';
 import { jellyfinIcon } from '../../assets/jellyfin-icon.svg.js';
 import { jellyseerrIcon } from '../../assets/jellyseerr-icon.svg.js';
+import { combinedIcon } from '../../assets/combined-icon.svg.js';
 import type { ServerType, ExtensionConfig } from '../../types/index.js';
 
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
@@ -278,10 +279,9 @@ export class PopupView extends ComponentMixin(LitElement) {
   }
 
   private _renderHeader() {
-    const icon = this.serverType === 'emby' ? embyIcon(28) : jellyfinIcon(28);
     return html`
       <div class="header" part="header">
-        <div class="header-icon">${icon}</div>
+        <div class="header-icon">${combinedIcon(28)}</div>
         <div>
           <h1>Media Server Connector</h1>
           <p>Configure your server connection</p>

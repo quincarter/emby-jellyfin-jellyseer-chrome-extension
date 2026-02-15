@@ -13,6 +13,7 @@ export const popupViewStyles: CSSResultOrNative[] = [
     :host {
       display: block;
       width: 380px;
+      max-width: 100vw;
       min-height: 500px;
       background: var(--color-primary-gradient);
       font-family:
@@ -20,6 +21,12 @@ export const popupViewStyles: CSSResultOrNative[] = [
         -apple-system,
         sans-serif;
       color: var(--color-text-primary);
+    }
+
+    @media (max-width: 400px) {
+      :host {
+        width: 100vw;
+      }
     }
 
     .popup-container {
@@ -171,7 +178,8 @@ export const popupViewStyles: CSSResultOrNative[] = [
     .btn-probe {
       width: 100%;
       margin-top: var(--space-xs);
-      padding: 6px var(--space-md);
+      padding: 10px var(--space-md);
+      min-height: 44px;
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: var(--radius-sm);
@@ -229,8 +237,8 @@ export const popupViewStyles: CSSResultOrNative[] = [
 
     .toggle-switch {
       position: relative;
-      width: 44px;
-      height: 24px;
+      width: 50px;
+      height: 30px;
     }
 
     .toggle-switch input {
@@ -241,7 +249,7 @@ export const popupViewStyles: CSSResultOrNative[] = [
       position: absolute;
       inset: 0;
       background: rgba(255, 255, 255, 0.15);
-      border-radius: 12px;
+      border-radius: 15px;
       cursor: pointer;
       transition: background var(--transition-fast);
     }
@@ -249,8 +257,8 @@ export const popupViewStyles: CSSResultOrNative[] = [
     .toggle-slider::before {
       content: '';
       position: absolute;
-      width: 18px;
-      height: 18px;
+      width: 24px;
+      height: 24px;
       left: 3px;
       top: 3px;
       background: #fff;
@@ -270,6 +278,7 @@ export const popupViewStyles: CSSResultOrNative[] = [
     .btn {
       width: 100%;
       padding: var(--space-sm) var(--space-md);
+      min-height: 44px;
       border: none;
       border-radius: var(--radius-sm);
       font-size: 0.85rem;

@@ -125,4 +125,6 @@ Test coverage should be 90% or above.
 
 You should be running lint/prettier after every set of changes as well as build and test to ensure nothing will break pre-push.
 
+This can be executed with the custom script `checkyoself` in the package.json
+
 use yarn to install packages

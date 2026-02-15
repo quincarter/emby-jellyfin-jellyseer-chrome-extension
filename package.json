@@ -9,6 +9,7 @@
     "build": "tsc && vite build && vite build --config vite.config.content-script.ts",
     "build:extension": "tsc && vite build && vite build --config vite.config.content-script.ts && echo 'Extension built to dist/'",
     "preview": "vite preview",
+    "checkyoself": "yarn lint && yarn format && yarn build && yarn test && yarn test:e2e",
     "test": "wtr && vitest run",
     "test:e2e": "vite build --config vite.config.e2e.ts && playwright test",
     "test:e2e:report": "vite build --config vite.config.e2e.ts && playwright test && tsx scripts/generate-e2e-readme.ts",
@@ -23,6 +24,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "gen:icons": "tsx scripts/generate-icons-from-svg.ts",
     "prepare": "husky"
   },
   "dependencies": {

@@ -1,21 +1,32 @@
 import { html } from 'lit';
 
 /**
- * Jellyseerr logo SVG icon.
+ * Combined extension logo SVG icon (Emby, Jellyfin, Jellyseerr).
  * @param size - Icon size in pixels (default: 24)
  */
-export const jellyseerrIcon = (size = 24) => html`
+export const combinedIcon = (size = 24) => html`
   <svg
     width="${size}"
     height="${size}"
-    viewBox="0 0 449 449"
+    viewBox="0 0 512 512"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    aria-label="Jellyseerr"
+    aria-label="Media Server Connector"
   >
     <defs>
       <linearGradient
-        id="a"
+        id="jellyfin-gradient-combined"
+        x1="110.25"
+        y1="213.3"
+        x2="496.14"
+        y2="436.09"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop offset="0" stop-color="#aa5cc3" />
+        <stop offset="1" stop-color="#00a4dc" />
+      </linearGradient>
+      <linearGradient
+        id="a-combined"
         x1="-2254.016"
         x2="-2267.51"
         y1="-2831.433"
@@ -28,7 +39,7 @@ export const jellyseerrIcon = (size = 24) => html`
         <stop offset=".57" style="stop-color:#6786d1" />
       </linearGradient>
       <linearGradient
-        id="b"
+        id="b-combined"
         x1="-2175.81"
         x2="-2189.303"
         y1="-2839.483"
@@ -41,7 +52,7 @@ export const jellyseerrIcon = (size = 24) => html`
         <stop offset=".57" style="stop-color:#6786d1" />
       </linearGradient>
       <linearGradient
-        id="c"
+        id="c-combined"
         x1="-1831.757"
         x2="-1831.757"
         y1="-2576.996"
@@ -56,7 +67,7 @@ export const jellyseerrIcon = (size = 24) => html`
         <stop offset=".9" style="stop-color:#6ba1e6" />
       </linearGradient>
       <linearGradient
-        id="d"
+        id="d-combined"
         x1="-1891.134"
         x2="-1891.134"
         y1="-2576.996"
@@ -71,7 +82,7 @@ export const jellyseerrIcon = (size = 24) => html`
         <stop offset=".9" style="stop-color:#6ba1e6" />
       </linearGradient>
       <linearGradient
-        id="e"
+        id="e-combined"
         x1="-1922.004"
         x2="-1922.004"
         y1="-2576.996"
@@ -86,7 +97,7 @@ export const jellyseerrIcon = (size = 24) => html`
         <stop offset=".9" style="stop-color:#6ba1e6" />
       </linearGradient>
       <linearGradient
-        id="f"
+        id="f-combined"
         x1="-1862.421"
         x2="-1862.421"
         y1="-2576.996"
@@ -101,7 +112,7 @@ export const jellyseerrIcon = (size = 24) => html`
         <stop offset=".9" style="stop-color:#6ba1e6" />
       </linearGradient>
       <linearGradient
-        id="g"
+        id="g-combined"
         x1="-1735.548"
         x2="-1586.936"
         y1="-2673.095"
@@ -113,7 +124,7 @@ export const jellyseerrIcon = (size = 24) => html`
         <stop offset="1" style="stop-color:#4f65f5" />
       </linearGradient>
       <linearGradient
-        id="h"
+        id="h-combined"
         x1="-1059.872"
         x2="-1059.872"
         y1="-6378.031"
@@ -125,7 +136,7 @@ export const jellyseerrIcon = (size = 24) => html`
         <stop offset="1" style="stop-color:#fff;stop-opacity:0" />
       </linearGradient>
       <linearGradient
-        id="i"
+        id="i-combined"
         x1="-1351.382"
         x2="-1485.195"
         y1="-3908.894"
@@ -137,7 +148,7 @@ export const jellyseerrIcon = (size = 24) => html`
         <stop offset="1" style="stop-color:#f9f9f9;stop-opacity:0" />
       </linearGradient>
       <linearGradient
-        id="j"
+        id="j-combined"
         x1="-1293.035"
         x2="-1228.344"
         y1="-3139.552"
@@ -149,57 +160,75 @@ export const jellyseerrIcon = (size = 24) => html`
         <stop offset="1" style="stop-color:#00133a" />
       </linearGradient>
     </defs>
-    <path
-      d="m170.9 314-27-6s-6.2 39.6-8.6 59.5c-3.8 32.1-8.4 76.5-6.6 110.5 2 37.4 12.2 73.4 15.6 73.4s-1.8-22.9.5-73.3c1.5-33.6 7.1-74 13.8-110.5 3.3-18 12.9-53.4 12.9-53.4h-.6z"
-      fill="url(#a)"
-      transform="translate(0 -97)"
-    />
-    <path
-      d="M284.8 311.2h8.3c11.1 41.4 13.2 101.1 10.8 146.1-2.6 49.5-16.2 97.2-20.6 97.2s2.4-30.3-.7-97.1C280.4 412.9 271 371 270 311.2z"
-      fill="url(#b)"
-      transform="translate(0 -97)"
-    />
-    <path
-      d="M309.8 181.6h13.3c17.8 66.2 26.1 161.9 22.2 234-4.2 79.4-25.9 155.7-33.1 155.7s3.8-48.6-1.1-155.6c-3.3-71.4-23.5-138.4-25.1-234.2z"
-      fill="url(#c)"
-      transform="translate(0 -97)"
-    />
-    <path
-      d="M196.6 180.1h-13.3c-17.8 66.2-26.1 161.9-22.2 234 4.2 79.4 25.9 155.7 33.1 155.7s-3.8-48.6 1.1-155.6c3.3-71.4 23.5-138.4 25.1-234.2h-23.8z"
-      fill="url(#d)"
-      transform="translate(0 -97)"
-    />
-    <path
-      d="m155.6 150-30.2-10.8s-11.1 70.7-15.3 106.2c-6.7 57.3-20 136.6-16.7 197.3 3.6 66.8 21.8 131.1 27.8 131.1s-3.2-40.9 1-131c2.8-60.1 21.2-117 27.4-197.4 2.5-31.9 7.3-95.5 7.3-95.5z"
-      fill="url(#e)"
-      transform="translate(0 -97)"
-    />
-    <path
-      d="m255.5 181.6-27.3 4.6s3.6 53 3.6 83.1c0 48.9 1.9 98.2 1.8 149.5-.2 58.9 9.7 157.6 14.8 157.6s21.7-127 25.2-203c2.3-50.7-5.2-95.1-6.5-125.4-1.2-27-5-63.4-5-63.4z"
-      fill="url(#f)"
-      transform="translate(0 -97)"
-    />
-    <path
-      d="M405.8 197.7c0 68.8-11.7 73-30.8 102.1-13.8 20.9 14.1 37.1 2.9 42.9-13.3 6.9-9.1-5.6-35.6-12.7-11.5-3-36.5.3-46.6 2.3-10 1.9-40.6-15.1-48.7-17.3-12.1-3.3-41.8 12.5-59.9 12.5s-37-15.8-61.1-9.3c-28.6 7.7-63.1 26.3-68.3 20.2-10-11.7 21.9-20.6 10-41.4-7.5-13.2-33.4-47.9-34.2-83-2.4-112.8 91-208.1 191.1-208.1s181.1 86.8 181.1 183.9"
-      fill="url(#g)"
-      transform="translate(0 -97)"
-    />
-    <path
-      d="M218.4 41.7C163.7 41.7 87.3 98.3 87.3 153c0 6.1-4.9 11-11 11s-11-4.9-11-11c0-66.8 86.2-133.2 153.1-133.2 6.1 0 11 4.9 11 11s-5 10.9-11 10.9"
-      fill-rule="evenodd"
-      clip-rule="evenodd"
-      fill="url(#h)"
-      transform="translate(0 -97)"
-    />
-    <path
-      d="M299.3 248.5c-5.8 9.5-13.7 17.1-23 22.3-4 2.2-8.2 3.9-12.6 5.2-13.1 5.9-27.7 9-42.6 9.3-50.8.9-93-31.6-94.7-72.8-.8-20.2 11.3-41.2 20.6-57.3 7.9-13.7 21.5-37.2 39.4-46.6 36.5-19.2 85.8 1.1 110.4 45.6 7.1 12.9 11.7 27 13.2 41.1 1.1 4.6 1.8 9.3 1.8 14 .2 12.2-3.4 24.3-10.2 35.1-.7 1.4-1.4 2.7-2.2 4 0 .1-.1.1-.1.1"
-      fill="url(#i)"
-      transform="translate(0 -97)"
-    />
-    <path
-      d="M219 147.4c31.7 0 57.3 25.7 57.3 57.3S250.6 262 219 262s-57.3-25.7-57.3-57.3c0-5.9.9-11.5 2.5-16.9 4.5 10 14.5 16.9 26.1 16.9 15.8 0 28.6-12.9 28.6-28.6 0-11.6-6.9-21.7-16.9-26.1 5.4-1.7 11-2.5 17-2.6"
-      fill="url(#j)"
-      transform="translate(0 -97)"
-    />
+    <!-- Emby -->
+    <g transform="translate(128, 10) scale(0.5)">
+      <g transform="translate(0, -97)">
+        <path
+          d="m97.1 229.4 26.5 26.5L0 379.5l132.4 132.4 26.5-26.5L282.5 609l141.2-141.2-26.5-26.5L512 326.5 379.6 194.1l-26.5 26.5L229.5 97z"
+          fill="#52b54b"
+        />
+        <path d="M196.8 351.2v-193L366 254.7 281.4 303z" fill="#fff" transform="translate(0 97)" />
+      </g>
+    </g>
+    <!-- Jellyfin -->
+    <g transform="translate(0, 240) scale(0.5)">
+      <g transform="translate(-5.42, -7.37)">
+        <path
+          d="M261.42,201.62c-20.44,0-86.24,119.29-76.2,139.43s142.48,19.92,152.4,0S281.86,201.63,261.42,201.62Z"
+          fill="url(#jellyfin-gradient-combined)"
+        />
+        <path
+          d="M261.42,23.3C199.83,23.3,1.57,382.73,31.8,443.43s429.34,60,459.24,0S323,23.3,261.42,23.3ZM411.9,390.76c-19.59,39.33-281.08,39.77-300.9,0S221.1,115.48,261.45,115.48,431.49,351.42,411.9,390.76Z"
+          fill="url(#jellyfin-gradient-combined)"
+        />
+      </g>
+    </g>
+    <!-- Jellyseerr -->
+    <g transform="translate(256, 240) scale(0.42) translate(30, 30)">
+      <g transform="translate(0, -97)">
+        <path
+          d="m170.9 314-27-6s-6.2 39.6-8.6 59.5c-3.8 32.1-8.4 76.5-6.6 110.5 2 37.4 12.2 73.4 15.6 73.4s-1.8-22.9.5-73.3c1.5-33.6 7.1-74 13.8-110.5 3.3-18 12.9-53.4 12.9-53.4h-.6z"
+          fill="url(#a-combined)"
+        />
+        <path
+          d="M284.8 311.2h8.3c11.1 41.4 13.2 101.1 10.8 146.1-2.6 49.5-16.2 97.2-20.6 97.2s2.4-30.3-.7-97.1C280.4 412.9 271 371 270 311.2z"
+          fill="url(#b-combined)"
+        />
+        <path
+          d="M309.8 181.6h13.3c17.8 66.2 26.1 161.9 22.2 234-4.2 79.4-25.9 155.7-33.1 155.7s3.8-48.6-1.1-155.6c-3.3-71.4-23.5-138.4-25.1-234.2z"
+          fill="url(#c-combined)"
+        />
+        <path
+          d="M196.6 180.1h-13.3c-17.8 66.2-26.1 161.9-22.2 234 4.2 79.4 25.9 155.7 33.1 155.7s-3.8-48.6 1.1-155.6c3.3-71.4 23.5-138.4 25.1-234.2h-23.8z"
+          fill="url(#d-combined)"
+        />
+        <path
+          d="m155.6 150-30.2-10.8s-11.1 70.7-15.3 106.2c-6.7 57.3-20 136.6-16.7 197.3 3.6 66.8 21.8 131.1 27.8 131.1s-3.2-40.9 1-131c2.8-60.1 21.2-117 27.4-197.4 2.5-31.9 7.3-95.5 7.3-95.5z"
+          fill="url(#e-combined)"
+        />
+        <path
+          d="m255.5 181.6-27.3 4.6s3.6 53 3.6 83.1c0 48.9 1.9 98.2 1.8 149.5-.2 58.9 9.7 157.6 14.8 157.6s21.7-127 25.2-203c2.3-50.7-5.2-95.1-6.5-125.4-1.2-27-5-63.4-5-63.4z"
+          fill="url(#f-combined)"
+        />
+        <path
+          d="M405.8 197.7c0 68.8-11.7 73-30.8 102.1-13.8 20.9 14.1 37.1 2.9 42.9-13.3 6.9-9.1-5.6-35.6-12.7-11.5-3-36.5.3-46.6 2.3-10 1.9-40.6-15.1-48.7-17.3-12.1-3.3-41.8 12.5-59.9 12.5s-37-15.8-61.1-9.3c-28.6 7.7-63.1 26.3-68.3 20.2-10-11.7 21.9-20.6 10-41.4-7.5-13.2-33.4-47.9-34.2-83-2.4-112.8 91-208.1 191.1-208.1s181.1 86.8 181.1 183.9"
+          fill="url(#g-combined)"
+        />
+        <path
+          d="M218.4 41.7C163.7 41.7 87.3 98.3 87.3 153c0 6.1-4.9 11-11 11s-11-4.9-11-11c0-66.8 86.2-133.2 153.1-133.2 6.1 0 11 4.9 11 11s-5 10.9-11 10.9"
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          fill="url(#h-combined)"
+        />
+        <path
+          d="M299.3 248.5c-5.8 9.5-13.7 17.1-23 22.3-4 2.2-8.2 3.9-12.6 5.2-13.1 5.9-27.7 9-42.6 9.3-50.8.8-20.2 11.3-41.2 20.6-57.3 7.9-13.7 21.5-37.2 39.4-46.6 36.5-19.2 85.8 1.1 110.4 45.6 7.1 12.9 11.7 27 13.2 41.1 1.1 4.6 1.8 9.3 1.8 14 .2 12.2-3.4 24.3-10.2 35.1-.7 1.4-1.4 2.7-2.2 4 0 .1-.1.1-.1.1"
+          fill="url(#i-combined)"
+        />
+        <path
+          d="M219 147.4c31.7 0 57.3 25.7 57.3 57.3S250.6 262 219 262s-57.3-25.7-57.3-57.3c0-5.9.9-11.5 2.5-16.9 4.5 10 14.5 16.9 26.1 16.9 15.8 0 28.6-12.9 28.6-28.6 0-11.6-6.9-21.7-16.9-26.1 5.4-1.7 11-2.5 17-2.6"
+          fill="url(#j-combined)"
+        />
+      </g>
+    </g>
   </svg>
 `;
