@@ -1,7 +1,7 @@
 {
-  "name": "emby-chrome-extension",
+  "name": "@quincarter/ive-got-this-extension",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -25,7 +25,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "gen:icons": "tsx scripts/generate-icons-from-svg.ts",
-    "version": "tsx scripts/sync-manifest-version.ts",
+    "changeset:add": "changeset && changeset version",
+    "changeset:publish": "changeset publish",
+    "version": "tsx scripts/sync-manifest-version.ts && yarn gen:icons",
     "prepare": "husky"
   },
   "dependencies": {
