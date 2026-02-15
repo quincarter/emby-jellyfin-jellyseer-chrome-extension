@@ -204,7 +204,10 @@ const resolveMediaMatchEffect = (
           ) ?? (typeMatches.length > 0 ? undefined : items[0]))
         : (typeMatches[0] ?? items[0]);
 
-      if (!match) return { status: 'unavailable' as const };
+      if (!match) {
+        console.log('[Media Connector] No movie match found in results');
+        return { status: 'unavailable' as const };
+      }
       return { status: 'available' as const, item: match, serverUrl: baseUrl };
     }
 
@@ -217,11 +220,12 @@ const resolveMediaMatchEffect = (
           ) ?? (typeMatches.length > 0 ? undefined : items[0]))
         : (typeMatches[0] ?? items[0]);
 
-      if (!match) return { status: 'unavailable' as const };
+      if (!match) {
+        console.log('[Media Connector] No series match found in results');
+        return { status: 'unavailable' as const };
+      }
       return { status: 'available' as const, item: match, serverUrl: baseUrl };
-    }
-
-    // For season/episode, find the series first
+    } // For season/episode, find the series first
     const series = items.find((i) => i.Type === 'Series');
     if (!series) return { status: 'unavailable' as const };
 
@@ -278,7 +282,9 @@ export const checkMediaAvailabilityEffect = (
 
     // Try IMDb ID first (most reliable)
     if (media.imdbId) {
+      console.log(`[Media Connector] Searching by IMDb ID: ${media.imdbId}`);
       const results = yield* searchByProviderIdEffect(config, media.imdbId, 'Imdb');
+      console.log(`[Media Connector] Search by IMDb ID found ${results.Items.length} items`);
       if (results.Items.length > 0) {
         return yield* resolveMediaMatchEffect(config, results.Items, media);
       }
@@ -286,7 +292,9 @@ export const checkMediaAvailabilityEffect = (
 
     // Try TMDb ID
     if (media.tmdbId) {
+      console.log(`[Media Connector] Searching by TMDb ID: ${media.tmdbId}`);
       const results = yield* searchByProviderIdEffect(config, media.tmdbId, 'Tmdb');
+      console.log(`[Media Connector] Search by TMDb ID found ${results.Items.length} items`);
       if (results.Items.length > 0) {
         return yield* resolveMediaMatchEffect(config, results.Items, media);
       }
@@ -303,7 +311,11 @@ export const checkMediaAvailabilityEffect = (
       episode: 'Series',
     };
 
+    console.log(
+      `[Media Connector] Falling back to title search: "${title}" (Type: ${typeMap[media.type]})`,
+    );
     const results = yield* searchMediaEffect(config, title, typeMap[media.type]);
+    console.log(`[Media Connector] Title search found ${results.Items.length} items`);
 
     if (results.Items.length === 0) {
       return { status: 'unavailable' as const };

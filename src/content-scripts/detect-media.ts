@@ -213,6 +213,7 @@ const detectFromTrakt = (): DetectedMedia | undefined => {
       seriesTitle: title,
       seasonNumber: parseInt(episodeMatch[1], 10),
       episodeNumber: parseInt(episodeMatch[2], 10),
+      year,
       imdbId,
       tmdbId,
     };
@@ -225,6 +226,7 @@ const detectFromTrakt = (): DetectedMedia | undefined => {
       type: 'season',
       seriesTitle: title,
       seasonNumber: parseInt(seasonMatch[1], 10),
+      year,
       imdbId,
       tmdbId,
     };

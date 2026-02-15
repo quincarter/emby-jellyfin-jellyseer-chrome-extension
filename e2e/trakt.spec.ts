@@ -87,4 +87,19 @@ test.describe('Trakt — content script injection', () => {
     expect(wtwCount).toBe(1);
     expect(legacyCount).toBe(1);
   });
+
+  test('regression: available movie shows Play button, not Request', async ({ page }) => {
+    await setupContentScript(page, 'trakt-movie.html', {
+      CHECK_MEDIA: mockResponses.checkMediaAvailable,
+    });
+
+    const legacyBtn = page.locator('#media-connector-trakt-action-btn');
+    await expect(legacyBtn).toBeVisible();
+    await expect(legacyBtn).toContainText('Play on Emby');
+    await expect(legacyBtn).not.toContainText('Request');
+
+    const wtwItem = page.locator('#media-connector-wtw-item');
+    await expect(wtwItem).toBeVisible();
+    await expect(wtwItem).not.toContainText('Request');
+  });
 });

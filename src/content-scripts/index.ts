@@ -150,6 +150,7 @@ const initTrakt = (): void => {
 
       if (response) {
         cachedResponse = response;
+        tryInjectTraktLegacyButton(response);
         tryInjectTraktItem(response);
       }
     } finally {
@@ -173,6 +174,7 @@ const initTrakt = (): void => {
       const wtwExists = document.getElementById('media-connector-wtw-item');
       const legacyExists = document.getElementById('media-connector-trakt-action-btn');
       if (!wtwExists || !legacyExists) {
+        tryInjectTraktLegacyButton(cachedResponse);
         tryInjectTraktItem(cachedResponse);
       }
       return;
@@ -221,29 +223,17 @@ const sendMessage = <T>(message: unknown): Promise<T | undefined> => {
 };
 
 /**
- * Attempt to inject the server item into Trakt's "Where to Watch" list.
+ * Modern Trakt UI: Attempt to inject the server item into "Where to Watch" list.
  * Called both on initial detection and whenever Svelte re-renders the section.
  * This is a synchronous injection — the persistent observer in initTrakt()
  * handles re-calling this when the element is removed.
  */
 const tryInjectTraktItem = (response: CheckMediaResponse): void => {
-  // Determine what kind of item to show
   const canLink =
     (response.payload.status === 'available' || response.payload.status === 'partial') &&
     response.payload.itemUrl;
-
   const canRequest = response.payload.status === 'unavailable';
-
   const isUnconfigured = response.payload.status === 'unconfigured';
-
-  // If error or unexpected status, skip
-  if (!canLink && !canRequest && !isUnconfigured) return;
-
-  // Always try the legacy action-buttons injection (classic trakt.tv)
-  tryInjectTraktLegacyButton(response);
-
-  // If error or unexpected status, skip
-  if (!canLink && !canRequest && !isUnconfigured) return;
 
   const serverType = response.payload.serverType ?? 'emby';
   const serverLabel = serverType === 'jellyfin' ? 'Jellyfin' : 'Emby';
@@ -333,7 +323,7 @@ const tryInjectTraktItem = (response: CheckMediaResponse): void => {
           <div class="trakt-streaming-service-logo" style="${logoContainerStyle}">
             ${logoSvg}
           </div>
-          <p style="${labelStyle}">${labelText}</p>
+          <p style="${labelStyle}">${labelText}${response.payload.status === 'partial' ? ' (Partial)' : ''}</p>
         </div>
       </a>`;
   } else if (canRequest) {
@@ -348,7 +338,7 @@ const tryInjectTraktItem = (response: CheckMediaResponse): void => {
     item.addEventListener('click', () => {
       handleRequestClick();
     });
-  } else {
+  } else if (isUnconfigured) {
     labelText = `Set up ${serverLabel}`;
     item.innerHTML = `
       <div class="where-to-watch-item-content" style="${contentStyle} cursor: pointer; opacity: 0.6;">
@@ -357,6 +347,8 @@ const tryInjectTraktItem = (response: CheckMediaResponse): void => {
         </div>
         <p style="${labelStyle}">${labelText}</p>
       </div>`;
+  } else {
+    return; // Should not happen with current logic
   }
 
   // Apply item-level styles (no border/ring — matches native items)
@@ -368,8 +360,6 @@ const tryInjectTraktItem = (response: CheckMediaResponse): void => {
 
 /**
  * Inject a "Play on Emby/Jellyfin" button into Trakt's legacy action-buttons area.
- * The button is inserted above the "Check In" button (.btn-checkin).
- * This targets the classic trakt.tv experience (not app.trakt.tv).
  */
 const TRAKT_ACTION_BTN_ID = 'media-connector-trakt-action-btn';
 
@@ -387,8 +377,6 @@ const tryInjectTraktLegacyButton = (response: CheckMediaResponse): void => {
 
   const canRequest = response.payload.status === 'unavailable';
   const isUnconfigured = response.payload.status === 'unconfigured';
-
-  if (!canLink && !canRequest && !isUnconfigured) return;
 
   const serverType = response.payload.serverType ?? 'emby';
   const serverLabel = serverType === 'jellyfin' ? 'Jellyfin' : 'Emby';
@@ -449,7 +437,7 @@ const tryInjectTraktLegacyButton = (response: CheckMediaResponse): void => {
         if (textEl) textEl.textContent = 'Requested!';
       });
     });
-  } else {
+  } else if (isUnconfigured) {
     btn.href = '#';
     btn.style.opacity = '0.6';
     btn.innerHTML = `
@@ -457,6 +445,8 @@ const tryInjectTraktLegacyButton = (response: CheckMediaResponse): void => {
       <div class="text">
         <div class="main-info">Set up ${serverLabel}</div>
       </div>`;
+  } else {
+    return;
   }
 
   // Insert above the Check In button
