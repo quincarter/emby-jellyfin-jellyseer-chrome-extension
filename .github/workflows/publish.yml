@@ -86,14 +86,14 @@ jobs:
 
       - name: Upload to Chrome Web Store
         if: steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')
-        uses: Klemensas/chrome-extension-upload-action@v1.1
-        with:
-          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
-          client-id: ${{ secrets.CHROME_CLIENT_ID }}
-          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
-          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
-          zip-path: extension.zip
-          publish: true
+        run: |
+          npx chrome-extension-upload-cli@latest upload \
+            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
+            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
+            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
+            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }} \
+            --file extension.zip \
+            --auto-publish
 
       - name: Upload to Edge Add-ons
         if: steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')
