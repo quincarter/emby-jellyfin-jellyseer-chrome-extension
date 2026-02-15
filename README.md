@@ -100,3 +100,28 @@ yarn test:e2e:report
 yarn test:unit:watch
 yarn test:watch
 ```
+
+## Releasing & Publishing
+
+This project uses [Changesets](https://github.com/changesets/changesets) to manage versioning and publishing. To release a new version to the Chrome Web Store and Edge Add-ons, follow these steps:
+
+1. **Create a Changeset:** In your feature branch, run:
+
+   ```bash
+   yarn changeset
+   ```
+
+   Follow the prompts to select the impact (major, minor, patch) and provide a description of the changes. This will create a small markdown file in the `.changeset` directory.
+
+2. **Open & Merge your PR:** Push your changes (including the changeset file) and open a PR to `main`. Once merged, a GitHub Action will detect the changeset and automatically create a new PR titled **"Version Packages"**.
+
+3. **Merge the Version PR:** Review and merge the "Version Packages" PR. This will:
+   - Bump the version in `package.json` and `manifest.json`.
+   - Update the `CHANGELOG.md`.
+   - Generate new icons if necessary.
+   - Tag the repository.
+
+4. **Automatic Publishing:** Once the "Version Packages" PR is merged to `main`, the publishing workflow will trigger, build the extension, and upload it to the Chrome Web Store and Edge Add-ons gallery.
+
+> [!IMPORTANT]
+> Merging a feature PR directly to `main` without a changeset will **not** trigger a store release. You must follow the two-step merge process (Feature PR → Version PR) to publish.
