@@ -41,7 +41,7 @@ jobs:
 
       - name: Generate coverage badge
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: npx tsx scripts/generate-coverage-badges.ts
+        run: npx tsx scripts/generate-coverage-badges.ts e2e
 
       - name: Deploy badge to gh-badges branch
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
