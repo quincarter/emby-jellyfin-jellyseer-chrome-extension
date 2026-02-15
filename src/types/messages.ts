@@ -20,7 +20,7 @@ export type ExtensionMessage =
  * cross-site link clicks from carrying session cookies.
  */
 export interface OpenTabMessage {
-  readonly type: "OPEN_TAB";
+  readonly type: 'OPEN_TAB';
   readonly payload: {
     readonly url: string;
   };
@@ -30,13 +30,13 @@ export interface OpenTabMessage {
  * Request to check if media exists on the server.
  */
 export interface CheckMediaMessage {
-  readonly type: "CHECK_MEDIA";
+  readonly type: 'CHECK_MEDIA';
   readonly payload: {
     readonly title: string;
     readonly year?: number;
     readonly imdbId?: string;
     readonly tmdbId?: string;
-    readonly mediaType: "movie" | "series" | "season" | "episode";
+    readonly mediaType: 'movie' | 'series' | 'season' | 'episode';
     readonly seasonNumber?: number;
     readonly episodeNumber?: number;
   };
@@ -46,15 +46,10 @@ export interface CheckMediaMessage {
  * Response with media availability status.
  */
 export interface CheckMediaResponse {
-  readonly type: "CHECK_MEDIA_RESPONSE";
+  readonly type: 'CHECK_MEDIA_RESPONSE';
   readonly payload: {
-    readonly status:
-      | "available"
-      | "unavailable"
-      | "partial"
-      | "error"
-      | "unconfigured";
-    readonly serverType?: "emby" | "jellyfin";
+    readonly status: 'available' | 'unavailable' | 'partial' | 'error' | 'unconfigured';
+    readonly serverType?: 'emby' | 'jellyfin';
     readonly itemId?: string;
     readonly itemUrl?: string;
     readonly details?: string;
@@ -66,13 +61,13 @@ export interface CheckMediaResponse {
  * Request to submit a media request via Jellyseerr.
  */
 export interface RequestMediaMessage {
-  readonly type: "REQUEST_MEDIA";
+  readonly type: 'REQUEST_MEDIA';
   readonly payload: {
     readonly title: string;
     readonly year?: number;
     readonly imdbId?: string;
     readonly tmdbId?: string;
-    readonly mediaType: "movie" | "series";
+    readonly mediaType: 'movie' | 'series';
   };
 }
 
@@ -80,7 +75,7 @@ export interface RequestMediaMessage {
  * Response from a Jellyseerr media request.
  */
 export interface RequestMediaResponse {
-  readonly type: "REQUEST_MEDIA_RESPONSE";
+  readonly type: 'REQUEST_MEDIA_RESPONSE';
   readonly payload: {
     readonly success: boolean;
     readonly message: string;
@@ -92,10 +87,10 @@ export interface RequestMediaResponse {
  * including availability info from the connected media server.
  */
 export interface SearchJellyseerrMessage {
-  readonly type: "SEARCH_JELLYSEERR";
+  readonly type: 'SEARCH_JELLYSEERR';
   readonly payload: {
     readonly query: string;
-    readonly mediaType?: "movie" | "tv";
+    readonly mediaType?: 'movie' | 'tv';
     readonly year?: number;
   };
 }
@@ -107,16 +102,10 @@ export interface JellyseerrResultItem {
   readonly id: number;
   readonly title: string;
   readonly year?: number;
-  readonly mediaType: "movie" | "tv";
+  readonly mediaType: 'movie' | 'tv';
   readonly overview: string;
   readonly posterUrl?: string;
-  readonly status:
-    | "available"
-    | "partial"
-    | "pending"
-    | "processing"
-    | "unknown"
-    | "not_requested";
+  readonly status: 'available' | 'partial' | 'pending' | 'processing' | 'unknown' | 'not_requested';
   readonly serverUrl?: string;
   /** Direct link to the item on Emby/Jellyfin (only set when available/partial). */
   readonly serverItemUrl?: string;
@@ -126,11 +115,11 @@ export interface JellyseerrResultItem {
  * Response with Jellyseerr search results.
  */
 export interface SearchJellyseerrResponse {
-  readonly type: "SEARCH_JELLYSEERR_RESPONSE";
+  readonly type: 'SEARCH_JELLYSEERR_RESPONSE';
   readonly payload: {
     readonly results: JellyseerrResultItem[];
     readonly jellyseerrEnabled: boolean;
-    readonly serverType: "emby" | "jellyfin";
+    readonly serverType: 'emby' | 'jellyfin';
     readonly jellyseerrUrl?: string;
     readonly serverUrl?: string;
     readonly error?: string;
@@ -141,16 +130,16 @@ export interface SearchJellyseerrResponse {
  * Request to retrieve extension configuration.
  */
 export interface GetConfigMessage {
-  readonly type: "GET_CONFIG";
+  readonly type: 'GET_CONFIG';
 }
 
 /**
  * Response with the stored extension configuration.
  */
 export interface GetConfigResponse {
-  readonly type: "GET_CONFIG_RESPONSE";
+  readonly type: 'GET_CONFIG_RESPONSE';
   readonly payload: {
-    readonly serverType: "emby" | "jellyfin";
+    readonly serverType: 'emby' | 'jellyfin';
     readonly serverUrl: string;
     readonly localServerUrl: string;
     readonly apiKey: string;
@@ -165,9 +154,9 @@ export interface GetConfigResponse {
  * Request to save extension configuration.
  */
 export interface SaveConfigMessage {
-  readonly type: "SAVE_CONFIG";
+  readonly type: 'SAVE_CONFIG';
   readonly payload: {
-    readonly serverType: "emby" | "jellyfin";
+    readonly serverType: 'emby' | 'jellyfin';
     readonly serverUrl: string;
     readonly localServerUrl: string;
     readonly apiKey: string;
@@ -182,7 +171,7 @@ export interface SaveConfigMessage {
  * Response after saving configuration.
  */
 export interface SaveConfigResponse {
-  readonly type: "SAVE_CONFIG_RESPONSE";
+  readonly type: 'SAVE_CONFIG_RESPONSE';
   readonly payload: {
     readonly success: boolean;
   };

@@ -1,4 +1,3 @@
-
 This extension will be a connector for Emby and Jellyfin, a self hosted media server. I want the base functionality to recognize when you are on a movie or tv show page (like trakt.tv, imdb, netflix, amazon prime video, google and bing search pages when a movie is shown), show an emby/jellyfin icon to take the user to the item in their library on their configured server address. When on tv shows, we should recognize when the user is at the show level, season level, and episode level and verify if the episode exists in their db, if it is, take them to it at the desired level based on where they are located.
 
 This should also connect to Jellyseer, a self hosted request platform to request the movie or tv show directly from the page they are on. This may popup in the extension panel or as a modal if we are able to do that. I want to support both and have it configurable as a setting.

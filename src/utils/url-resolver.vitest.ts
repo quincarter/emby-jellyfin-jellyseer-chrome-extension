@@ -1,75 +1,75 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   probeServerUrl,
   resolveServerUrl,
   resolveJellyseerrUrl,
   clearResolvedUrlCache,
   isUsingLocalUrl,
-} from "./url-resolver.js";
-import type { ExtensionConfig } from "../types/index.js";
+} from './url-resolver.js';
+import type { ExtensionConfig } from '../types/index.js';
 
 const baseConfig: ExtensionConfig = {
   server: {
-    serverType: "emby",
-    serverUrl: "https://emby.example.com",
-    localServerUrl: "http://192.168.1.100:8096",
-    apiKey: "key",
+    serverType: 'emby',
+    serverUrl: 'https://emby.example.com',
+    localServerUrl: 'http://192.168.1.100:8096',
+    apiKey: 'key',
   },
   jellyseerr: {
     enabled: true,
-    serverUrl: "https://jellyseerr.example.com",
-    localServerUrl: "http://192.168.1.100:5055",
-    apiKey: "jkey",
+    serverUrl: 'https://jellyseerr.example.com',
+    localServerUrl: 'http://192.168.1.100:5055',
+    apiKey: 'jkey',
   },
 };
 
-describe("probeServerUrl", () => {
+describe('probeServerUrl', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("returns true when server responds with 200", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+  it('returns true when server responds with 200', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
-    const result = await probeServerUrl("https://emby.example.com");
+    const result = await probeServerUrl('https://emby.example.com');
     expect(result).toBe(true);
 
     const call = vi.mocked(fetch).mock.calls[0];
-    expect(call[0]).toBe("https://emby.example.com/System/Info/Public");
+    expect(call[0]).toBe('https://emby.example.com/System/Info/Public');
   });
 
-  it("returns false when server responds with non-200", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+  it('returns false when server responds with non-200', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
 
-    const result = await probeServerUrl("https://emby.example.com");
+    const result = await probeServerUrl('https://emby.example.com');
     expect(result).toBe(false);
   });
 
-  it("returns false when fetch throws", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("timeout")));
+  it('returns false when fetch throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('timeout')));
 
-    const result = await probeServerUrl("https://emby.example.com");
+    const result = await probeServerUrl('https://emby.example.com');
     expect(result).toBe(false);
   });
 
-  it("uses custom probe path", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+  it('uses custom probe path', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
-    await probeServerUrl("https://test.com", "/api/v1/status");
+    await probeServerUrl('https://test.com', '/api/v1/status');
     const url = vi.mocked(fetch).mock.calls[0][0] as string;
-    expect(url).toBe("https://test.com/api/v1/status");
+    expect(url).toBe('https://test.com/api/v1/status');
   });
 
-  it("strips trailing slash from URL", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+  it('strips trailing slash from URL', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
-    await probeServerUrl("https://test.com/");
+    await probeServerUrl('https://test.com/');
     const url = vi.mocked(fetch).mock.calls[0][0] as string;
-    expect(url).toBe("https://test.com/System/Info/Public");
+    expect(url).toBe('https://test.com/System/Info/Public');
   });
 });
 
-describe("resolveServerUrl", () => {
+describe('resolveServerUrl', () => {
   beforeEach(() => {
     clearResolvedUrlCache();
   });
@@ -79,32 +79,32 @@ describe("resolveServerUrl", () => {
     clearResolvedUrlCache();
   });
 
-  it("returns public URL when no local URL is configured", async () => {
+  it('returns public URL when no local URL is configured', async () => {
     const config: ExtensionConfig = {
       ...baseConfig,
-      server: { ...baseConfig.server, localServerUrl: "" },
+      server: { ...baseConfig.server, localServerUrl: '' },
     };
 
     const url = await resolveServerUrl(config);
-    expect(url).toBe("https://emby.example.com");
+    expect(url).toBe('https://emby.example.com');
   });
 
-  it("returns local URL when reachable", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+  it('returns local URL when reachable', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
     const url = await resolveServerUrl(baseConfig);
-    expect(url).toBe("http://192.168.1.100:8096");
+    expect(url).toBe('http://192.168.1.100:8096');
   });
 
-  it("returns public URL when local is unreachable", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("unreachable")));
+  it('returns public URL when local is unreachable', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('unreachable')));
 
     const url = await resolveServerUrl(baseConfig);
-    expect(url).toBe("https://emby.example.com");
+    expect(url).toBe('https://emby.example.com');
   });
 
-  it("caches resolved URL", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+  it('caches resolved URL', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
     await resolveServerUrl(baseConfig);
     await resolveServerUrl(baseConfig);
@@ -114,7 +114,7 @@ describe("resolveServerUrl", () => {
   });
 });
 
-describe("resolveJellyseerrUrl", () => {
+describe('resolveJellyseerrUrl', () => {
   beforeEach(() => {
     clearResolvedUrlCache();
   });
@@ -124,34 +124,34 @@ describe("resolveJellyseerrUrl", () => {
     clearResolvedUrlCache();
   });
 
-  it("returns public URL when no local URL is configured", async () => {
+  it('returns public URL when no local URL is configured', async () => {
     const config: ExtensionConfig = {
       ...baseConfig,
-      jellyseerr: { ...baseConfig.jellyseerr, localServerUrl: "" },
+      jellyseerr: { ...baseConfig.jellyseerr, localServerUrl: '' },
     };
 
     const url = await resolveJellyseerrUrl(config);
-    expect(url).toBe("https://jellyseerr.example.com");
+    expect(url).toBe('https://jellyseerr.example.com');
   });
 
-  it("probes local URL with /api/v1/status path", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+  it('probes local URL with /api/v1/status path', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
     await resolveJellyseerrUrl(baseConfig);
 
     const call = vi.mocked(fetch).mock.calls[0];
-    expect(call[0]).toContain("/api/v1/status");
+    expect(call[0]).toContain('/api/v1/status');
   });
 });
 
-describe("clearResolvedUrlCache", () => {
+describe('clearResolvedUrlCache', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     clearResolvedUrlCache();
   });
 
-  it("forces re-probe after clearing", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+  it('forces re-probe after clearing', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
     await resolveServerUrl(baseConfig);
     clearResolvedUrlCache();
@@ -162,7 +162,7 @@ describe("clearResolvedUrlCache", () => {
   });
 });
 
-describe("isUsingLocalUrl", () => {
+describe('isUsingLocalUrl', () => {
   beforeEach(() => {
     clearResolvedUrlCache();
   });
@@ -172,28 +172,22 @@ describe("isUsingLocalUrl", () => {
     clearResolvedUrlCache();
   });
 
-  it("returns false when no cache exists", () => {
-    const result = isUsingLocalUrl(
-      "http://192.168.1.100:8096",
-      "https://emby.example.com",
-    );
+  it('returns false when no cache exists', () => {
+    const result = isUsingLocalUrl('http://192.168.1.100:8096', 'https://emby.example.com');
     expect(result).toBe(false);
   });
 
-  it("returns false when local URL is empty", () => {
-    const result = isUsingLocalUrl("", "https://emby.example.com");
+  it('returns false when local URL is empty', () => {
+    const result = isUsingLocalUrl('', 'https://emby.example.com');
     expect(result).toBe(false);
   });
 
-  it("returns true when local URL was resolved", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+  it('returns true when local URL was resolved', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
     await resolveServerUrl(baseConfig);
 
-    const result = isUsingLocalUrl(
-      "http://192.168.1.100:8096",
-      "https://emby.example.com",
-    );
+    const result = isUsingLocalUrl('http://192.168.1.100:8096', 'https://emby.example.com');
     expect(result).toBe(true);
   });
 });

@@ -1,23 +1,21 @@
-import { html, fixture, expect } from "@open-wc/testing";
-import { MediaStatusBadge } from "./media-status-badge.js";
+import { html, fixture, expect } from '@open-wc/testing';
+import { MediaStatusBadge } from './media-status-badge.js';
 
 // Ensure registration
-import "./media-status-badge.js";
+import './media-status-badge.js';
 
-describe("media-status-badge", () => {
-  it("renders in loading state by default", async () => {
-    const el = await fixture<MediaStatusBadge>(
-      html`<media-status-badge></media-status-badge>`,
-    );
+describe('media-status-badge', () => {
+  it('renders in loading state by default', async () => {
+    const el = await fixture<MediaStatusBadge>(html`<media-status-badge></media-status-badge>`);
 
-    const badge = el.shadowRoot?.querySelector(".badge--loading");
+    const badge = el.shadowRoot?.querySelector('.badge--loading');
     expect(badge).to.exist;
 
-    const text = el.shadowRoot?.querySelector(".badge-text");
-    expect(text?.textContent).to.equal("Checking...");
+    const text = el.shadowRoot?.querySelector('.badge-text');
+    expect(text?.textContent).to.equal('Checking...');
   });
 
-  it("renders available state with link", async () => {
+  it('renders available state with link', async () => {
     const el = await fixture<MediaStatusBadge>(
       html`<media-status-badge
         status="available"
@@ -26,54 +24,44 @@ describe("media-status-badge", () => {
       ></media-status-badge>`,
     );
 
-    const link = el.shadowRoot?.querySelector(
-      "a.badge--available",
-    ) as HTMLAnchorElement;
+    const link = el.shadowRoot?.querySelector('a.badge--available') as HTMLAnchorElement;
     expect(link).to.exist;
-    expect(link.href).to.contain("item?id=123");
-    expect(link.target).to.equal("_blank");
+    expect(link.href).to.contain('item?id=123');
+    expect(link.target).to.equal('_blank');
 
-    const text = el.shadowRoot?.querySelector(".badge-text");
-    expect(text?.textContent).to.equal("Available on Server");
+    const text = el.shadowRoot?.querySelector('.badge-text');
+    expect(text?.textContent).to.equal('Available on Server');
   });
 
-  it("renders unavailable state with request button", async () => {
+  it('renders unavailable state with request button', async () => {
     const el = await fixture<MediaStatusBadge>(
-      html`<media-status-badge
-        status="unavailable"
-        media-title="Some Movie"
-      ></media-status-badge>`,
+      html`<media-status-badge status="unavailable" media-title="Some Movie"></media-status-badge>`,
     );
 
-    const button = el.shadowRoot?.querySelector("button.badge--unavailable");
+    const button = el.shadowRoot?.querySelector('button.badge--unavailable');
     expect(button).to.exist;
 
-    const text = el.shadowRoot?.querySelector(".badge-text");
-    expect(text?.textContent).to.equal("Request with Jellyseerr");
+    const text = el.shadowRoot?.querySelector('.badge-text');
+    expect(text?.textContent).to.equal('Request with Jellyseerr');
   });
 
-  it("fires request-media event when unavailable badge is clicked", async () => {
+  it('fires request-media event when unavailable badge is clicked', async () => {
     const el = await fixture<MediaStatusBadge>(
-      html`<media-status-badge
-        status="unavailable"
-        media-title="Test Movie"
-      ></media-status-badge>`,
+      html`<media-status-badge status="unavailable" media-title="Test Movie"></media-status-badge>`,
     );
 
     let eventDetail: unknown = undefined;
-    el.addEventListener("request-media", ((e: CustomEvent) => {
+    el.addEventListener('request-media', ((e: CustomEvent) => {
       eventDetail = e.detail;
     }) as EventListener);
 
-    const button = el.shadowRoot?.querySelector(
-      "button.badge--unavailable",
-    ) as HTMLButtonElement;
+    const button = el.shadowRoot?.querySelector('button.badge--unavailable') as HTMLButtonElement;
     button.click();
 
-    expect(eventDetail).to.deep.equal({ title: "Test Movie" });
+    expect(eventDetail).to.deep.equal({ title: 'Test Movie' });
   });
 
-  it("renders partial state with details", async () => {
+  it('renders partial state with details', async () => {
     const el = await fixture<MediaStatusBadge>(
       html`<media-status-badge
         status="partial"
@@ -82,14 +70,14 @@ describe("media-status-badge", () => {
       ></media-status-badge>`,
     );
 
-    const badge = el.shadowRoot?.querySelector(".badge--partial");
+    const badge = el.shadowRoot?.querySelector('.badge--partial');
     expect(badge).to.exist;
 
-    const text = el.shadowRoot?.querySelector(".badge-text");
-    expect(text?.textContent).to.equal("Season 3 not found, but series exists");
+    const text = el.shadowRoot?.querySelector('.badge-text');
+    expect(text?.textContent).to.equal('Season 3 not found, but series exists');
   });
 
-  it("renders error state with message", async () => {
+  it('renders error state with message', async () => {
     const el = await fixture<MediaStatusBadge>(
       html`<media-status-badge
         status="error"
@@ -97,30 +85,30 @@ describe("media-status-badge", () => {
       ></media-status-badge>`,
     );
 
-    const badge = el.shadowRoot?.querySelector(".badge--error");
+    const badge = el.shadowRoot?.querySelector('.badge--error');
     expect(badge).to.exist;
 
-    const text = el.shadowRoot?.querySelector(".badge-text");
-    expect(text?.textContent).to.contain("Connection timeout");
+    const text = el.shadowRoot?.querySelector('.badge-text');
+    expect(text?.textContent).to.contain('Connection timeout');
   });
 
-  it("renders unconfigured state", async () => {
+  it('renders unconfigured state', async () => {
     const el = await fixture<MediaStatusBadge>(
       html`<media-status-badge status="unconfigured"></media-status-badge>`,
     );
 
-    const badge = el.shadowRoot?.querySelector(".badge--unconfigured");
+    const badge = el.shadowRoot?.querySelector('.badge--unconfigured');
     expect(badge).to.exist;
 
-    const text = el.shadowRoot?.querySelector(".badge-text");
-    expect(text?.textContent).to.equal("Configure Extension");
+    const text = el.shadowRoot?.querySelector('.badge-text');
+    expect(text?.textContent).to.equal('Configure Extension');
   });
 
-  it("reflects status attribute", async () => {
+  it('reflects status attribute', async () => {
     const el = await fixture<MediaStatusBadge>(
       html`<media-status-badge status="available"></media-status-badge>`,
     );
 
-    expect(el.getAttribute("status")).to.equal("available");
+    expect(el.getAttribute('status')).to.equal('available');
   });
 });

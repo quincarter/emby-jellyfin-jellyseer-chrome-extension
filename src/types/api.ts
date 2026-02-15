@@ -9,7 +9,7 @@ export interface MediaServerItem {
   /** Display name */
   readonly Name: string;
   /** Item type from the server */
-  readonly Type: "Movie" | "Series" | "Season" | "Episode";
+  readonly Type: 'Movie' | 'Series' | 'Season' | 'Episode';
   /** Production year */
   readonly ProductionYear?: number;
   /** External provider IDs (IMDb, TMDb, etc.) */
@@ -55,17 +55,17 @@ export interface MediaSearchResult {
  */
 export type MediaAvailability =
   | {
-      readonly status: "available";
+      readonly status: 'available';
       readonly item: MediaServerItem;
       readonly serverUrl: string;
     }
-  | { readonly status: "unavailable" }
+  | { readonly status: 'unavailable' }
   | {
-      readonly status: "partial";
+      readonly status: 'partial';
       readonly item: MediaServerItem;
       readonly serverUrl: string;
       readonly details: string;
     }
-  | { readonly status: "loading" }
-  | { readonly status: "error"; readonly message: string }
-  | { readonly status: "unconfigured" };
+  | { readonly status: 'loading' }
+  | { readonly status: 'error'; readonly message: string }
+  | { readonly status: 'unconfigured' };

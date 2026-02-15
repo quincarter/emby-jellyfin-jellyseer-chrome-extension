@@ -1,7 +1,7 @@
-import { css } from "lit";
-import type { CSSResultOrNative } from "lit";
-import { themeStyles } from "../styles/theme.css.js";
-import { typographyStyles } from "../styles/typography.css.js";
+import { css } from 'lit';
+import type { CSSResultOrNative } from 'lit';
+import { themeStyles } from '../styles/theme.css.js';
+import { typographyStyles } from '../styles/typography.css.js';
 
 /**
  * Styles for the sandbox-app component.
@@ -82,7 +82,7 @@ export const sandboxAppStyles: CSSResultOrNative[] = [
     }
 
     .toggle-slider::before {
-      content: "";
+      content: '';
       position: absolute;
       width: 18px;
       height: 18px;

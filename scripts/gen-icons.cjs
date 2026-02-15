@@ -1,5 +1,5 @@
-const fs = require("fs");
-const zlib = require("zlib");
+const fs = require('fs');
+const zlib = require('zlib');
 
 const createPNG = (size) => {
   const width = size,
@@ -34,13 +34,13 @@ const createPNG = (size) => {
 
   return Buffer.concat([
     pngSig,
-    makeChunk("IHDR", ihdrData),
-    makeChunk("IDAT", compressed),
-    makeChunk("IEND", Buffer.alloc(0)),
+    makeChunk('IHDR', ihdrData),
+    makeChunk('IDAT', compressed),
+    makeChunk('IEND', Buffer.alloc(0)),
   ]);
 };
 
 [16, 32, 48, 128].forEach((s) => {
   fs.writeFileSync(`public/icons/icon-${s}.png`, createPNG(s));
 });
-console.log("Icons created");
+console.log('Icons created');

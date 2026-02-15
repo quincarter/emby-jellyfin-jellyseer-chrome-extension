@@ -1,10 +1,10 @@
-import { LitElement } from "lit";
-import { property } from "lit/decorators.js";
-import type { ServerType, ExtensionConfig } from "../types/index.js";
-import { DEFAULT_CONFIG } from "../types/index.js";
+import { LitElement } from 'lit';
+import { property } from 'lit/decorators.js';
+import type { ServerType, ExtensionConfig } from '../types/index.js';
+import { DEFAULT_CONFIG } from '../types/index.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Constructor<T = {}> = new (...args: any[]) => T;
+type Constructor<T = Record<string, unknown>> = new (...args: any[]) => T;
 
 /**
  * Shared interface for components using ComponentMixin.
@@ -29,9 +29,7 @@ export declare class ComponentMixinInterface {
  * }
  * ```
  */
-export const ComponentMixin = <T extends Constructor<LitElement>>(
-  superClass: T,
-) => {
+export const ComponentMixin = <T extends Constructor<LitElement>>(superClass: T) => {
   class MixedElement extends superClass {
     /**
      * The current extension configuration.
@@ -42,8 +40,8 @@ export const ComponentMixin = <T extends Constructor<LitElement>>(
     /**
      * Convenience accessor for the configured server type.
      */
-    @property({ attribute: "server-type", reflect: true })
-    serverType: ServerType = "emby";
+    @property({ attribute: 'server-type', reflect: true })
+    serverType: ServerType = 'emby';
 
     /**
      * Build the URL to view a media item on the configured server.
@@ -52,12 +50,12 @@ export const ComponentMixin = <T extends Constructor<LitElement>>(
      * @returns Full URL to the item on the media server
      */
     protected buildItemUrl(itemId: string, serverId?: string): string {
-      const baseUrl = this.config.server.serverUrl.replace(/\/$/, "");
-      if (this.config.server.serverType === "jellyfin") {
-        const serverIdParam = serverId ? `&serverId=${serverId}` : "";
+      const baseUrl = this.config.server.serverUrl.replace(/\/$/, '');
+      if (this.config.server.serverType === 'jellyfin') {
+        const serverIdParam = serverId ? `&serverId=${serverId}` : '';
         return `${baseUrl}/web/#/details?id=${itemId}${serverIdParam}`;
       }
-      const serverIdParam = serverId ? `&serverId=${serverId}` : "";
+      const serverIdParam = serverId ? `&serverId=${serverId}` : '';
       return `${baseUrl}/web/index.html#!/item?id=${itemId}${serverIdParam}`;
     }
 

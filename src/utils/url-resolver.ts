@@ -1,4 +1,4 @@
-import type { ExtensionConfig } from "../types/index.js";
+import type { ExtensionConfig } from '../types/index.js';
 
 /**
  * Cached resolved URL and its expiry timestamp.
@@ -22,8 +22,7 @@ const resolvedCache = new Map<string, ResolvedUrlCache>();
 /**
  * Build a cache key from the two URL candidates.
  */
-const buildCacheKey = (localUrl: string, publicUrl: string): string =>
-  `${localUrl}|${publicUrl}`;
+const buildCacheKey = (localUrl: string, publicUrl: string): string => `${localUrl}|${publicUrl}`;
 
 /**
  * Probe whether a URL is reachable by hitting a health-check endpoint.
@@ -36,18 +35,18 @@ const buildCacheKey = (localUrl: string, publicUrl: string): string =>
  */
 export const probeServerUrl = async (
   url: string,
-  probePath = "/System/Info/Public",
+  probePath = '/System/Info/Public',
   timeoutMs = LOCAL_PROBE_TIMEOUT_MS,
 ): Promise<boolean> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const baseUrl = url.replace(/\/$/, "");
+    const baseUrl = url.replace(/\/$/, '');
     const response = await fetch(`${baseUrl}${probePath}`, {
       signal: controller.signal,
-      headers: { Accept: "application/json" },
-      credentials: "omit",
+      headers: { Accept: 'application/json' },
+      credentials: 'omit',
     });
     return response.ok;
   } catch {
@@ -73,8 +72,8 @@ const resolveUrl = async (
   publicUrl: string,
   probePath: string,
 ): Promise<string> => {
-  const cleanPublic = publicUrl.replace(/\/$/, "");
-  const cleanLocal = localUrl.replace(/\/$/, "");
+  const cleanPublic = publicUrl.replace(/\/$/, '');
+  const cleanLocal = localUrl.replace(/\/$/, '');
 
   if (!cleanLocal) {
     return cleanPublic;
@@ -106,14 +105,8 @@ const resolveUrl = async (
  * @param config - Extension configuration containing both URLs
  * @returns The resolved base URL (trailing slash stripped)
  */
-export const resolveServerUrl = async (
-  config: ExtensionConfig,
-): Promise<string> =>
-  resolveUrl(
-    config.server.localServerUrl ?? "",
-    config.server.serverUrl,
-    "/System/Info/Public",
-  );
+export const resolveServerUrl = async (config: ExtensionConfig): Promise<string> =>
+  resolveUrl(config.server.localServerUrl ?? '', config.server.serverUrl, '/System/Info/Public');
 
 /**
  * Resolve the best Jellyseerr URL to use.
@@ -122,14 +115,8 @@ export const resolveServerUrl = async (
  * @param config - Extension configuration containing both URLs
  * @returns The resolved base URL (trailing slash stripped)
  */
-export const resolveJellyseerrUrl = async (
-  config: ExtensionConfig,
-): Promise<string> =>
-  resolveUrl(
-    config.jellyseerr.localServerUrl ?? "",
-    config.jellyseerr.serverUrl,
-    "/api/v1/status",
-  );
+export const resolveJellyseerrUrl = async (config: ExtensionConfig): Promise<string> =>
+  resolveUrl(config.jellyseerr.localServerUrl ?? '', config.jellyseerr.serverUrl, '/api/v1/status');
 
 /**
  * Clear the resolved URL cache.
@@ -145,12 +132,9 @@ export const clearResolvedUrlCache = (): void => {
  * @param publicUrl - The public URL to check against
  * @returns True if local URL is being used, false if public or no cache
  */
-export const isUsingLocalUrl = (
-  localUrl: string,
-  publicUrl: string,
-): boolean => {
-  const cleanLocal = localUrl.replace(/\/$/, "");
-  const cleanPublic = publicUrl.replace(/\/$/, "");
+export const isUsingLocalUrl = (localUrl: string, publicUrl: string): boolean => {
+  const cleanLocal = localUrl.replace(/\/$/, '');
+  const cleanPublic = publicUrl.replace(/\/$/, '');
 
   if (!cleanLocal) return false;
 

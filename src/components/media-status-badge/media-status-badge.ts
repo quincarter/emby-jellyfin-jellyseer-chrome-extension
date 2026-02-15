@@ -1,8 +1,8 @@
-import { LitElement, html, nothing } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { ComponentMixin } from "../../mixins/component-mixin.js";
-import { mediaStatusBadgeStyles } from "./media-status-badge.styles.js";
-import type { MediaAvailability } from "../../types/index.js";
+import { LitElement, html, nothing } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import { ComponentMixin } from '../../mixins/component-mixin.js';
+import { mediaStatusBadgeStyles } from './media-status-badge.styles.js';
+import type { MediaAvailability } from '../../types/index.js';
 
 /**
  * A badge component that displays the availability status of media.
@@ -20,53 +20,53 @@ import type { MediaAvailability } from "../../types/index.js";
  * @fires request-media - When the user clicks the request button
  * @csspart badge - The badge container element
  */
-@customElement("media-status-badge")
+@customElement('media-status-badge')
 export class MediaStatusBadge extends ComponentMixin(LitElement) {
   static styles = mediaStatusBadgeStyles;
 
   /**
    * The availability status to display.
    */
-  @property({ attribute: "status", reflect: true })
-  status: MediaAvailability["status"] = "loading";
+  @property({ attribute: 'status', reflect: true })
+  status: MediaAvailability['status'] = 'loading';
 
   /**
    * URL to navigate to when clicked (for available items).
    */
-  @property({ attribute: "item-url" })
-  itemUrl = "";
+  @property({ attribute: 'item-url' })
+  itemUrl = '';
 
   /**
    * Title of the media for display or request purposes.
    */
-  @property({ attribute: "media-title" })
-  mediaTitle = "";
+  @property({ attribute: 'media-title' })
+  mediaTitle = '';
 
   /**
    * Additional details (e.g., for partial availability).
    */
-  @property({ attribute: "details" })
-  details = "";
+  @property({ attribute: 'details' })
+  details = '';
 
   /**
    * Error message when status is 'error'.
    */
-  @property({ attribute: "error-message" })
-  errorMessage = "";
+  @property({ attribute: 'error-message' })
+  errorMessage = '';
 
   render() {
     switch (this.status) {
-      case "available":
+      case 'available':
         return this._renderAvailable();
-      case "partial":
+      case 'partial':
         return this._renderPartial();
-      case "unavailable":
+      case 'unavailable':
         return this._renderUnavailable();
-      case "loading":
+      case 'loading':
         return this._renderLoading();
-      case "error":
+      case 'error':
         return this._renderError();
-      case "unconfigured":
+      case 'unconfigured':
         return this._renderUnconfigured();
       default:
         return nothing;
@@ -85,9 +85,7 @@ export class MediaStatusBadge extends ComponentMixin(LitElement) {
       >
         <span class="badge-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-            <path
-              d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
-            />
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
           </svg>
         </span>
         <span class="badge-text">Available on Server</span>
@@ -110,7 +108,7 @@ export class MediaStatusBadge extends ComponentMixin(LitElement) {
             <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
           </svg>
         </span>
-        <span class="badge-text">${this.details || "Partially Available"}</span>
+        <span class="badge-text">${this.details || 'Partially Available'}</span>
       </a>
     `;
   }
@@ -152,7 +150,7 @@ export class MediaStatusBadge extends ComponentMixin(LitElement) {
             />
           </svg>
         </span>
-        <span class="badge-text">Error: ${this.errorMessage || "Unknown"}</span>
+        <span class="badge-text">Error: ${this.errorMessage || 'Unknown'}</span>
       </div>
     `;
   }
@@ -173,12 +171,12 @@ export class MediaStatusBadge extends ComponentMixin(LitElement) {
   }
 
   private _handleRequest(): void {
-    this.emitEvent("request-media", { title: this.mediaTitle });
+    this.emitEvent('request-media', { title: this.mediaTitle });
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    "media-status-badge": MediaStatusBadge;
+    'media-status-badge': MediaStatusBadge;
   }
 }

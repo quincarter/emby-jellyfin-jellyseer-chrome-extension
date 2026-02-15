@@ -2,8 +2,8 @@
  * Pure helper functions extracted from the content script for testability.
  * These have no dependency on the DOM or chrome.* APIs.
  */
-import type { DetectedMedia } from "../types/index.js";
-import type { CheckMediaMessage } from "../types/messages.js";
+import type { DetectedMedia } from '../types/index.js';
+import type { CheckMediaMessage } from '../types/messages.js';
 
 /**
  * Build CHECK_MEDIA payload from detected media.
@@ -13,23 +13,20 @@ import type { CheckMediaMessage } from "../types/messages.js";
  */
 export const buildCheckPayload = (
   media: DetectedMedia | undefined,
-): CheckMediaMessage["payload"] => {
-  if (!media) throw new Error("No media detected");
+): CheckMediaMessage['payload'] => {
+  if (!media) throw new Error('No media detected');
   return {
-    title:
-      media.type === "season" || media.type === "episode"
-        ? media.seriesTitle
-        : media.title,
+    title: media.type === 'season' || media.type === 'episode' ? media.seriesTitle : media.title,
     year: media.year,
     imdbId: media.imdbId,
     tmdbId: media.tmdbId,
     mediaType: media.type,
     seasonNumber:
-      media.type === "season"
+      media.type === 'season'
         ? media.seasonNumber
-        : media.type === "episode"
+        : media.type === 'episode'
           ? media.seasonNumber
           : undefined,
-    episodeNumber: media.type === "episode" ? media.episodeNumber : undefined,
+    episodeNumber: media.type === 'episode' ? media.episodeNumber : undefined,
   };
 };

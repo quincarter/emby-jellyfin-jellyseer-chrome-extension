@@ -1,20 +1,13 @@
-import { LitElement, html, nothing } from "lit";
-import { customElement, state } from "lit/decorators.js";
-import { sandboxAppStyles } from "./sandbox-app.styles.js";
-import { mockScenarios } from "./mock-data.js";
-import {
-  checkMediaAvailability,
-  testServerConnection,
-} from "../utils/api-client.js";
-import { loadConfig } from "../utils/storage.js";
-import type {
-  ExtensionConfig,
-  DetectedMedia,
-  MediaAvailability,
-} from "../types/index.js";
-import { DEFAULT_CONFIG } from "../types/index.js";
-import "../components/media-status-badge/media-status-badge.js";
-import "../components/popup-view/popup-view.js";
+import { LitElement, html, nothing } from 'lit';
+import { customElement, state } from 'lit/decorators.js';
+import { sandboxAppStyles } from './sandbox-app.styles.js';
+import { mockScenarios } from './mock-data.js';
+import { checkMediaAvailability, testServerConnection } from '../utils/api-client.js';
+import { loadConfig } from '../utils/storage.js';
+import type { ExtensionConfig, DetectedMedia, MediaAvailability } from '../types/index.js';
+import { DEFAULT_CONFIG } from '../types/index.js';
+import '../components/media-status-badge/media-status-badge.js';
+import '../components/popup-view/popup-view.js';
 
 /**
  * Sandbox application for developing and testing components in isolation.
@@ -25,7 +18,7 @@ import "../components/popup-view/popup-view.js";
  * <sandbox-app></sandbox-app>
  * ```
  */
-@customElement("sandbox-app")
+@customElement('sandbox-app')
 export class SandboxApp extends LitElement {
   static styles = sandboxAppStyles;
 
@@ -36,13 +29,13 @@ export class SandboxApp extends LitElement {
   private _config: ExtensionConfig = DEFAULT_CONFIG;
 
   @state()
-  private _searchTitle = "";
+  private _searchTitle = '';
 
   @state()
-  private _searchYear = "";
+  private _searchYear = '';
 
   @state()
-  private _searchImdbId = "";
+  private _searchImdbId = '';
 
   @state()
   private _realResult: MediaAvailability | undefined;
@@ -59,9 +52,7 @@ export class SandboxApp extends LitElement {
     return html`
       <div class="sandbox-container">
         ${this._renderHeader()}
-        ${this._useRealData
-          ? this._renderRealDataSection()
-          : this._renderMockSection()}
+        ${this._useRealData ? this._renderRealDataSection() : this._renderMockSection()}
         ${this._renderPopupPreview()}
       </div>
     `;
@@ -105,7 +96,7 @@ export class SandboxApp extends LitElement {
 
   private _renderScenarioCard(scenario: (typeof mockScenarios)[number]) {
     const title =
-      scenario.media.type === "season" || scenario.media.type === "episode"
+      scenario.media.type === 'season' || scenario.media.type === 'episode'
         ? scenario.media.seriesTitle
         : scenario.media.title;
 
@@ -113,13 +104,11 @@ export class SandboxApp extends LitElement {
 
     const availability = scenario.availability;
     const itemUrl =
-      availability.status === "available" || availability.status === "partial"
+      availability.status === 'available' || availability.status === 'partial'
         ? `${availability.serverUrl}/web/index.html#!/item?id=${availability.item.Id}`
-        : "";
-    const details =
-      availability.status === "partial" ? availability.details : "";
-    const errorMessage =
-      availability.status === "error" ? availability.message : "";
+        : '';
+    const details = availability.status === 'partial' ? availability.details : '';
+    const errorMessage = availability.status === 'error' ? availability.message : '';
 
     return html`
       <div class="scenario-card">
@@ -140,13 +129,13 @@ export class SandboxApp extends LitElement {
 
   private _buildMetaText(media: DetectedMedia): string {
     switch (media.type) {
-      case "movie":
-        return `Movie • ${media.title}${media.year ? ` (${media.year})` : ""}${media.imdbId ? ` • ${media.imdbId}` : ""}`;
-      case "series":
-        return `Series • ${media.title}${media.year ? ` (${media.year})` : ""}`;
-      case "season":
+      case 'movie':
+        return `Movie • ${media.title}${media.year ? ` (${media.year})` : ''}${media.imdbId ? ` • ${media.imdbId}` : ''}`;
+      case 'series':
+        return `Series • ${media.title}${media.year ? ` (${media.year})` : ''}`;
+      case 'season':
         return `Season ${media.seasonNumber} • ${media.seriesTitle}`;
-      case "episode":
+      case 'episode':
         return `S${media.seasonNumber}E${media.episodeNumber} • ${media.seriesTitle}`;
     }
   }
@@ -193,40 +182,33 @@ export class SandboxApp extends LitElement {
             <button class="btn btn-primary" @click="${this._handleRealSearch}">
               Check Availability
             </button>
-            <button
-              class="btn btn-primary"
-              @click="${this._handleTestConnection}"
-            >
+            <button class="btn btn-primary" @click="${this._handleTestConnection}">
               Test Connection
             </button>
           </div>
 
           ${this._connectionTestResult
-            ? html`<div class="result-display">
-                ${this._connectionTestResult}
-              </div>`
+            ? html`<div class="result-display">${this._connectionTestResult}</div>`
             : nothing}
           ${this._realResult
             ? html`
                 <div style="margin-top: 16px;">
                   <media-status-badge
                     status="${this._realResult.status}"
-                    item-url="${this._realResult.status === "available" ||
-                    this._realResult.status === "partial"
+                    item-url="${this._realResult.status === 'available' ||
+                    this._realResult.status === 'partial'
                       ? `${this._realResult.serverUrl}/web/index.html#!/item?id=${this._realResult.item.Id}`
-                      : ""}"
+                      : ''}"
                     media-title="${this._searchTitle}"
-                    details="${this._realResult.status === "partial"
+                    details="${this._realResult.status === 'partial'
                       ? this._realResult.details
-                      : ""}"
-                    error-message="${this._realResult.status === "error"
+                      : ''}"
+                    error-message="${this._realResult.status === 'error'
                       ? this._realResult.message
-                      : ""}"
+                      : ''}"
                   ></media-status-badge>
                 </div>
-                <div class="result-display">
-                  ${JSON.stringify(this._realResult, undefined, 2)}
-                </div>
+                <div class="result-display">${JSON.stringify(this._realResult, undefined, 2)}</div>
               `
             : nothing}
         </div>
@@ -235,10 +217,10 @@ export class SandboxApp extends LitElement {
   }
 
   private async _handleRealSearch(): Promise<void> {
-    this._realResult = { status: "loading" };
+    this._realResult = { status: 'loading' };
 
     const media: DetectedMedia = {
-      type: "movie",
+      type: 'movie',
       title: this._searchTitle,
       year: this._searchYear ? parseInt(this._searchYear, 10) : undefined,
       imdbId: this._searchImdbId || undefined,
@@ -248,14 +230,14 @@ export class SandboxApp extends LitElement {
   }
 
   private async _handleTestConnection(): Promise<void> {
-    this._connectionTestResult = "Testing connection...";
+    this._connectionTestResult = 'Testing connection...';
     try {
       const ok = await testServerConnection(this._config);
       this._connectionTestResult = ok
-        ? "Connection successful!"
-        : "Connection failed. Check your settings.";
+        ? 'Connection successful!'
+        : 'Connection failed. Check your settings.';
     } catch (e) {
-      this._connectionTestResult = `Error: ${e instanceof Error ? e.message : "Unknown"}`;
+      this._connectionTestResult = `Error: ${e instanceof Error ? e.message : 'Unknown'}`;
     }
   }
 
@@ -275,6 +257,6 @@ export class SandboxApp extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "sandbox-app": SandboxApp;
+    'sandbox-app': SandboxApp;
   }
 }

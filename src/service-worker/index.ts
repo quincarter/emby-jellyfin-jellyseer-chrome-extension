@@ -1,34 +1,31 @@
-import { loadConfig, saveConfig } from "../utils/storage.js";
+import { loadConfig, saveConfig } from '../utils/storage.js';
 import {
   checkMediaAvailability,
   searchByProviderId,
   testServerConnection,
-} from "../utils/api-client.js";
-import {
-  clearResolvedUrlCache,
-  resolveServerUrl,
-} from "../utils/url-resolver.js";
+} from '../utils/api-client.js';
+import { clearResolvedUrlCache, resolveServerUrl } from '../utils/url-resolver.js';
 import {
   testJellyseerrConnection,
   jellyseerrSearch,
   requestMovie,
   requestTvShow,
-} from "../utils/jellyseerr-client.js";
-import { resolveJellyseerrUrl } from "../utils/url-resolver.js";
-import type { ExtensionConfig } from "../types/index.js";
+} from '../utils/jellyseerr-client.js';
+import { resolveJellyseerrUrl } from '../utils/url-resolver.js';
+import type { ExtensionConfig } from '../types/index.js';
 import type {
   CheckMediaMessage,
   OpenTabMessage,
   RequestMediaMessage,
   SearchJellyseerrMessage,
   SaveConfigMessage,
-} from "../types/messages.js";
+} from '../types/messages.js';
 import {
   mapMediaStatus,
   withTimeout,
   buildDetectedMediaFromMessage,
   buildServerItemUrl,
-} from "./helpers.js";
+} from './helpers.js';
 
 /**
  * Service worker message handler.
@@ -38,7 +35,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   handleMessage(message)
     .then(sendResponse)
     .catch((err: Error) => {
-      sendResponse({ type: "ERROR", payload: { message: err.message } });
+      sendResponse({ type: 'ERROR', payload: { message: err.message } });
     });
 
   // Return true to indicate async response
@@ -57,33 +54,33 @@ const handleMessage = async (
     | { type: string },
 ): Promise<unknown> => {
   switch (message.type) {
-    case "CHECK_MEDIA":
+    case 'CHECK_MEDIA':
       return handleCheckMedia(message as CheckMediaMessage);
 
-    case "REQUEST_MEDIA":
+    case 'REQUEST_MEDIA':
       return handleRequestMedia(message as RequestMediaMessage);
 
-    case "SEARCH_JELLYSEERR":
+    case 'SEARCH_JELLYSEERR':
       return handleSearchJellyseerr(message as SearchJellyseerrMessage);
 
-    case "SAVE_CONFIG":
+    case 'SAVE_CONFIG':
       return handleSaveConfig(message as SaveConfigMessage);
 
-    case "GET_CONFIG":
+    case 'GET_CONFIG':
       return handleGetConfig();
 
-    case "TEST_CONNECTION":
+    case 'TEST_CONNECTION':
       return handleTestConnection();
 
-    case "TEST_JELLYSEERR":
+    case 'TEST_JELLYSEERR':
       return handleTestJellyseerr();
 
-    case "OPEN_TAB":
+    case 'OPEN_TAB':
       return handleOpenTab(message as OpenTabMessage);
 
     default:
       return {
-        type: "ERROR",
+        type: 'ERROR',
         payload: { message: `Unknown message type: ${message.type}` },
       };
   }
@@ -99,7 +96,7 @@ const handleCheckMedia = async (message: CheckMediaMessage) => {
 
   const availability = await checkMediaAvailability(config, media);
 
-  if (availability.status === "available") {
+  if (availability.status === 'available') {
     const itemUrl = buildServerItemUrl(
       config.server.serverType,
       availability.serverUrl,
@@ -108,9 +105,9 @@ const handleCheckMedia = async (message: CheckMediaMessage) => {
     );
 
     return {
-      type: "CHECK_MEDIA_RESPONSE",
+      type: 'CHECK_MEDIA_RESPONSE',
       payload: {
-        status: "available",
+        status: 'available',
         serverType: config.server.serverType,
         itemId: availability.item.Id,
         itemUrl,
@@ -118,7 +115,7 @@ const handleCheckMedia = async (message: CheckMediaMessage) => {
     };
   }
 
-  if (availability.status === "partial") {
+  if (availability.status === 'partial') {
     const itemUrl = buildServerItemUrl(
       config.server.serverType,
       availability.serverUrl,
@@ -127,9 +124,9 @@ const handleCheckMedia = async (message: CheckMediaMessage) => {
     );
 
     return {
-      type: "CHECK_MEDIA_RESPONSE",
+      type: 'CHECK_MEDIA_RESPONSE',
       payload: {
-        status: "partial",
+        status: 'partial',
         serverType: config.server.serverType,
         itemId: availability.item.Id,
         itemUrl,
@@ -139,7 +136,7 @@ const handleCheckMedia = async (message: CheckMediaMessage) => {
   }
 
   return {
-    type: "CHECK_MEDIA_RESPONSE",
+    type: 'CHECK_MEDIA_RESPONSE',
     payload: {
       status: availability.status,
       serverType: config.server.serverType,
@@ -155,26 +152,26 @@ const handleRequestMedia = async (message: RequestMediaMessage) => {
 
   if (!config.jellyseerr.enabled) {
     return {
-      type: "REQUEST_MEDIA_RESPONSE",
-      payload: { success: false, message: "Jellyseerr is not enabled" },
+      type: 'REQUEST_MEDIA_RESPONSE',
+      payload: { success: false, message: 'Jellyseerr is not enabled' },
     };
   }
 
   // Resolve the Jellyseerr URL up front for logging
   const resolvedJellyseerrUrl = await resolveJellyseerrUrl(config);
   console.log(
-    "[Media Connector] handleRequestMedia:",
-    "\n  Configured Jellyseerr URL:",
+    '[Media Connector] handleRequestMedia:',
+    '\n  Configured Jellyseerr URL:',
     config.jellyseerr.serverUrl,
-    "\n  Local Jellyseerr URL:",
-    config.jellyseerr.localServerUrl ?? "(none)",
-    "\n  Resolved Jellyseerr URL:",
+    '\n  Local Jellyseerr URL:',
+    config.jellyseerr.localServerUrl ?? '(none)',
+    '\n  Resolved Jellyseerr URL:',
     resolvedJellyseerrUrl,
-    "\n  Title:",
+    '\n  Title:',
     message.payload.title,
-    "\n  TMDb ID:",
-    message.payload.tmdbId ?? "(none)",
-    "\n  Media Type:",
+    '\n  TMDb ID:',
+    message.payload.tmdbId ?? '(none)',
+    '\n  Media Type:',
     message.payload.mediaType,
   );
 
@@ -184,66 +181,55 @@ const handleRequestMedia = async (message: RequestMediaMessage) => {
     // Use tmdbId directly if provided (from sidebar flow)
     if (message.payload.tmdbId) {
       tmdbId = parseInt(message.payload.tmdbId, 10);
-      console.log("[Media Connector] Using provided tmdbId:", tmdbId);
+      console.log('[Media Connector] Using provided tmdbId:', tmdbId);
     }
 
     // Fallback: search Jellyseerr by title to find the TMDb ID
     if (!tmdbId || Number.isNaN(tmdbId)) {
-      console.log(
-        "[Media Connector] Searching Jellyseerr for:",
-        message.payload.title,
-      );
-      const searchResults = await jellyseerrSearch(
-        config,
-        message.payload.title,
-      );
+      console.log('[Media Connector] Searching Jellyseerr for:', message.payload.title);
+      const searchResults = await jellyseerrSearch(config, message.payload.title);
       const match = searchResults.results.find((r) => {
-        if (message.payload.mediaType === "movie") {
-          return r.mediaType === "movie";
+        if (message.payload.mediaType === 'movie') {
+          return r.mediaType === 'movie';
         }
-        return r.mediaType === "tv";
+        return r.mediaType === 'tv';
       });
 
       if (!match) {
         return {
-          type: "REQUEST_MEDIA_RESPONSE",
+          type: 'REQUEST_MEDIA_RESPONSE',
           payload: {
             success: false,
-            message: "Could not find media on Jellyseerr",
+            message: 'Could not find media on Jellyseerr',
           },
         };
       }
       tmdbId = match.id;
     }
 
-    console.log(
-      "[Media Connector] Requesting tmdbId:",
-      tmdbId,
-      "type:",
-      message.payload.mediaType,
-    );
+    console.log('[Media Connector] Requesting tmdbId:', tmdbId, 'type:', message.payload.mediaType);
 
-    if (message.payload.mediaType === "movie") {
+    if (message.payload.mediaType === 'movie') {
       await requestMovie(config, tmdbId);
     } else {
       await requestTvShow(config, tmdbId);
     }
 
     return {
-      type: "REQUEST_MEDIA_RESPONSE",
+      type: 'REQUEST_MEDIA_RESPONSE',
       payload: {
         success: true,
         message: `Request submitted successfully to ${resolvedJellyseerrUrl}!`,
       },
     };
   } catch (e) {
-    const errMsg = e instanceof Error ? e.message : "Unknown error";
-    const isCsrf = errMsg.toLowerCase().includes("csrf");
+    const errMsg = e instanceof Error ? e.message : 'Unknown error';
+    const isCsrf = errMsg.toLowerCase().includes('csrf');
     console.error(
-      "[Media Connector] Request failed:",
-      "\n  Server:",
+      '[Media Connector] Request failed:',
+      '\n  Server:',
       resolvedJellyseerrUrl,
-      "\n  Error:",
+      '\n  Error:',
       errMsg,
     );
     if (isCsrf) {
@@ -253,9 +239,9 @@ const handleRequestMedia = async (message: RequestMediaMessage) => {
     }
     const csrfHint = isCsrf
       ? `\n\n💡 Fix: Go to ${resolvedJellyseerrUrl}/settings/network and disable "Enable CSRF Protection".`
-      : "";
+      : '';
     return {
-      type: "REQUEST_MEDIA_RESPONSE",
+      type: 'REQUEST_MEDIA_RESPONSE',
       payload: {
         success: false,
         message: `[${resolvedJellyseerrUrl}] ${errMsg}${csrfHint}`,
@@ -286,7 +272,7 @@ const handleSaveConfig = async (message: SaveConfigMessage) => {
   await saveConfig(config);
   // Clear URL resolution cache so the new URLs are re-evaluated
   clearResolvedUrlCache();
-  return { type: "SAVE_CONFIG_RESPONSE", payload: { success: true } };
+  return { type: 'SAVE_CONFIG_RESPONSE', payload: { success: true } };
 };
 
 /**
@@ -295,7 +281,7 @@ const handleSaveConfig = async (message: SaveConfigMessage) => {
 const handleGetConfig = async () => {
   const config = await loadConfig();
   return {
-    type: "GET_CONFIG_RESPONSE",
+    type: 'GET_CONFIG_RESPONSE',
     payload: {
       serverType: config.server.serverType,
       serverUrl: config.server.serverUrl,
@@ -315,7 +301,7 @@ const handleGetConfig = async () => {
 const handleTestConnection = async () => {
   const config = await loadConfig();
   const ok = await testServerConnection(config);
-  return { type: "TEST_CONNECTION_RESPONSE", payload: { success: ok } };
+  return { type: 'TEST_CONNECTION_RESPONSE', payload: { success: ok } };
 };
 
 /**
@@ -324,7 +310,7 @@ const handleTestConnection = async () => {
 const handleTestJellyseerr = async () => {
   const config = await loadConfig();
   const ok = await testJellyseerrConnection(config);
-  return { type: "TEST_JELLYSEERR_RESPONSE", payload: { success: ok } };
+  return { type: 'TEST_JELLYSEERR_RESPONSE', payload: { success: ok } };
 };
 
 /**
@@ -335,13 +321,12 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
 
   if (!config.jellyseerr.enabled) {
     return {
-      type: "SEARCH_JELLYSEERR_RESPONSE",
+      type: 'SEARCH_JELLYSEERR_RESPONSE',
       payload: {
         results: [],
         jellyseerrEnabled: false,
         serverType: config.server.serverType,
-        error:
-          "Jellyseerr is not enabled. Configure it in the extension popup.",
+        error: 'Jellyseerr is not enabled. Configure it in the extension popup.',
       },
     };
   }
@@ -352,9 +337,7 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
     // Filter by mediaType if specified
     let filtered = searchResults.results;
     if (message.payload.mediaType) {
-      filtered = filtered.filter(
-        (r) => r.mediaType === message.payload.mediaType,
-      );
+      filtered = filtered.filter((r) => r.mediaType === message.payload.mediaType);
     }
 
     // If a year was provided, prefer the result matching that year.
@@ -363,9 +346,7 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
       const targetYear = message.payload.year;
       const yearMatched = filtered.filter((r) => {
         const dateStr = r.releaseDate ?? r.firstAirDate;
-        const resultYear = dateStr
-          ? parseInt(dateStr.slice(0, 4), 10)
-          : undefined;
+        const resultYear = dateStr ? parseInt(dateStr.slice(0, 4), 10) : undefined;
         return resultYear === targetYear;
       });
       if (yearMatched.length > 0) {
@@ -378,9 +359,7 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
     const jellyseerrUrl = config.jellyseerr.serverUrl;
 
     // Resolve the server URL once up-front (avoids repeated probing in the loop)
-    const serverConfigured = !!(
-      config.server.serverUrl && config.server.apiKey
-    );
+    const serverConfigured = !!(config.server.serverUrl && config.server.apiKey);
     let resolvedUrl: string | undefined;
     if (serverConfigured) {
       resolvedUrl = await withTimeout(resolveServerUrl(config), 4000);
@@ -388,7 +367,7 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
 
     const results = await Promise.all(
       filtered.slice(0, 5).map(async (r) => {
-        const title = r.title ?? r.name ?? "Unknown";
+        const title = r.title ?? r.name ?? 'Unknown';
         const dateStr = r.releaseDate ?? r.firstAirDate;
         const year = dateStr ? parseInt(dateStr.slice(0, 4), 10) : undefined;
         const posterUrl = r.posterPath
@@ -398,29 +377,22 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
 
         // For available/partial items, look up the actual server item URL
         let serverItemUrl: string | undefined;
-        if (
-          (status === "available" || status === "partial") &&
-          serverConfigured &&
-          resolvedUrl
-        ) {
+        if ((status === 'available' || status === 'partial') && serverConfigured && resolvedUrl) {
           try {
             const tmdbId = String(r.id);
             console.log(
-              "[Media Connector] Looking up server item for TMDb ID:",
+              '[Media Connector] Looking up server item for TMDb ID:',
               tmdbId,
-              "resolvedUrl:",
+              'resolvedUrl:',
               resolvedUrl,
             );
             // Map Jellyseerr mediaType to Emby/Jellyfin item type
-            const itemType = r.mediaType === "movie" ? "Movie" : "Series";
+            const itemType = r.mediaType === 'movie' ? 'Movie' : 'Series';
             const serverResults = await withTimeout(
-              searchByProviderId(config, tmdbId, "Tmdb", itemType),
+              searchByProviderId(config, tmdbId, 'Tmdb', itemType),
               5000,
             );
-            console.log(
-              "[Media Connector] Server lookup results:",
-              JSON.stringify(serverResults),
-            );
+            console.log('[Media Connector] Server lookup results:', JSON.stringify(serverResults));
             const match = serverResults?.Items?.[0];
             if (match) {
               serverItemUrl = buildServerItemUrl(
@@ -429,29 +401,20 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
                 match.Id,
                 match.ServerId,
               );
-              console.log(
-                "[Media Connector] Built serverItemUrl:",
-                serverItemUrl,
-              );
+              console.log('[Media Connector] Built serverItemUrl:', serverItemUrl);
             } else {
-              console.warn(
-                "[Media Connector] No matching server item found for TMDb ID:",
-                tmdbId,
-              );
+              console.warn('[Media Connector] No matching server item found for TMDb ID:', tmdbId);
             }
           } catch (e) {
-            console.warn(
-              "[Media Connector] Could not resolve server item URL:",
-              e,
-            );
+            console.warn('[Media Connector] Could not resolve server item URL:', e);
           }
         } else {
           console.log(
-            "[Media Connector] Skipping server item lookup — status:",
+            '[Media Connector] Skipping server item lookup — status:',
             status,
-            "serverConfigured:",
+            'serverConfigured:',
             serverConfigured,
-            "resolvedUrl:",
+            'resolvedUrl:',
             resolvedUrl,
           );
         }
@@ -471,7 +434,7 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
     );
 
     return {
-      type: "SEARCH_JELLYSEERR_RESPONSE",
+      type: 'SEARCH_JELLYSEERR_RESPONSE',
       payload: {
         results,
         jellyseerrEnabled: true,
@@ -481,9 +444,9 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
       },
     };
   } catch (e) {
-    const errMsg = e instanceof Error ? e.message : "Unknown error";
+    const errMsg = e instanceof Error ? e.message : 'Unknown error';
     return {
-      type: "SEARCH_JELLYSEERR_RESPONSE",
+      type: 'SEARCH_JELLYSEERR_RESPONSE',
       payload: {
         results: [],
         jellyseerrEnabled: true,
@@ -501,8 +464,8 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
  */
 const handleOpenTab = async (message: OpenTabMessage) => {
   await chrome.tabs.create({ url: message.payload.url });
-  return { type: "OPEN_TAB_RESPONSE", payload: { success: true } };
+  return { type: 'OPEN_TAB_RESPONSE', payload: { success: true } };
 };
 
 // Log service worker activation
-console.log("[Media Server Connector] Service worker activated");
+console.log('[Media Server Connector] Service worker activated');

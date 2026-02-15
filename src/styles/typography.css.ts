@@ -1,5 +1,5 @@
-import { css } from "lit";
-import type { CSSResultOrNative } from "lit";
+import { css } from 'lit';
+import type { CSSResultOrNative } from 'lit';
 
 /**
  * Shared typography styles for components that render text.

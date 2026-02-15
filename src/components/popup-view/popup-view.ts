@@ -1,21 +1,18 @@
-import { LitElement, html, nothing } from "lit";
-import { customElement, state } from "lit/decorators.js";
-import { ComponentMixin } from "../../mixins/component-mixin.js";
-import { popupViewStyles } from "./popup-view.styles.js";
-import { loadConfig, saveConfig } from "../../utils/storage.js";
-import { testServerConnection } from "../../utils/api-client.js";
-import { testJellyseerrConnection } from "../../utils/jellyseerr-client.js";
-import {
-  probeServerUrl,
-  clearResolvedUrlCache,
-} from "../../utils/url-resolver.js";
-import { embyIcon } from "../../assets/emby-icon.svg.js";
-import { jellyfinIcon } from "../../assets/jellyfin-icon.svg.js";
-import { jellyseerrIcon } from "../../assets/jellyseerr-icon.svg.js";
-import type { ServerType, ExtensionConfig } from "../../types/index.js";
+import { LitElement, html, nothing } from 'lit';
+import { customElement, state } from 'lit/decorators.js';
+import { ComponentMixin } from '../../mixins/component-mixin.js';
+import { popupViewStyles } from './popup-view.styles.js';
+import { loadConfig, saveConfig } from '../../utils/storage.js';
+import { testServerConnection } from '../../utils/api-client.js';
+import { testJellyseerrConnection } from '../../utils/jellyseerr-client.js';
+import { probeServerUrl, clearResolvedUrlCache } from '../../utils/url-resolver.js';
+import { embyIcon } from '../../assets/emby-icon.svg.js';
+import { jellyfinIcon } from '../../assets/jellyfin-icon.svg.js';
+import { jellyseerrIcon } from '../../assets/jellyseerr-icon.svg.js';
+import type { ServerType, ExtensionConfig } from '../../types/index.js';
 
-type ConnectionStatus = "idle" | "testing" | "success" | "error";
-type LocalUrlStatus = "idle" | "probing" | "reachable" | "unreachable";
+type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
+type LocalUrlStatus = 'idle' | 'probing' | 'reachable' | 'unreachable';
 
 /**
  * Extension popup view component.
@@ -29,45 +26,45 @@ type LocalUrlStatus = "idle" | "probing" | "reachable" | "unreachable";
  * @csspart header - The popup header section
  * @csspart settings - The settings form section
  */
-@customElement("popup-view")
+@customElement('popup-view')
 export class PopupView extends ComponentMixin(LitElement) {
   static styles = popupViewStyles;
 
   @state()
-  private _serverUrl = "";
+  private _serverUrl = '';
 
   @state()
-  private _localServerUrl = "";
+  private _localServerUrl = '';
 
   @state()
-  private _apiKey = "";
+  private _apiKey = '';
 
   @state()
   private _jellyseerrEnabled = false;
 
   @state()
-  private _jellyseerrUrl = "";
+  private _jellyseerrUrl = '';
 
   @state()
-  private _jellyseerrLocalUrl = "";
+  private _jellyseerrLocalUrl = '';
 
   @state()
-  private _jellyseerrApiKey = "";
+  private _jellyseerrApiKey = '';
 
   @state()
-  private _connectionStatus: ConnectionStatus = "idle";
+  private _connectionStatus: ConnectionStatus = 'idle';
 
   @state()
-  private _localUrlStatus: LocalUrlStatus = "idle";
+  private _localUrlStatus: LocalUrlStatus = 'idle';
 
   @state()
-  private _jellyseerrLocalUrlStatus: LocalUrlStatus = "idle";
+  private _jellyseerrLocalUrlStatus: LocalUrlStatus = 'idle';
 
   @state()
-  private _jellyseerrStatus: ConnectionStatus = "idle";
+  private _jellyseerrStatus: ConnectionStatus = 'idle';
 
   @state()
-  private _saveStatus: "idle" | "saved" | "error" = "idle";
+  private _saveStatus: 'idle' | 'saved' | 'error' = 'idle';
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -116,12 +113,12 @@ export class PopupView extends ComponentMixin(LitElement) {
       // so the service worker can use chrome.cookies and bypass CORS.
       await this._requestHostPermissions(config);
 
-      this._saveStatus = "saved";
+      this._saveStatus = 'saved';
       setTimeout(() => {
-        this._saveStatus = "idle";
+        this._saveStatus = 'idle';
       }, 2000);
     } catch {
-      this._saveStatus = "error";
+      this._saveStatus = 'error';
     }
   }
 
@@ -129,9 +126,7 @@ export class PopupView extends ComponentMixin(LitElement) {
    * Request host permissions for configured server URLs.
    * This is needed for chrome.cookies access and CORS-free fetches in the service worker.
    */
-  private async _requestHostPermissions(
-    config: ExtensionConfig,
-  ): Promise<void> {
+  private async _requestHostPermissions(config: ExtensionConfig): Promise<void> {
     const origins: string[] = [];
 
     const addOrigin = (url: string): void => {
@@ -148,20 +143,15 @@ export class PopupView extends ComponentMixin(LitElement) {
     if (config.server.localServerUrl) addOrigin(config.server.localServerUrl);
     if (config.jellyseerr.enabled) {
       addOrigin(config.jellyseerr.serverUrl);
-      if (config.jellyseerr.localServerUrl)
-        addOrigin(config.jellyseerr.localServerUrl);
+      if (config.jellyseerr.localServerUrl) addOrigin(config.jellyseerr.localServerUrl);
     }
 
     if (origins.length > 0) {
       try {
         const granted = await chrome.permissions.request({ origins });
-        console.log(
-          "[Media Connector] Host permissions granted:",
-          granted,
-          origins,
-        );
+        console.log('[Media Connector] Host permissions granted:', granted, origins);
       } catch (e) {
-        console.warn("[Media Connector] Host permission request failed:", e);
+        console.warn('[Media Connector] Host permission request failed:', e);
       }
     }
   }
@@ -171,16 +161,16 @@ export class PopupView extends ComponentMixin(LitElement) {
   }
 
   private async _handleTestConnection(): Promise<void> {
-    this._connectionStatus = "testing";
+    this._connectionStatus = 'testing';
     try {
       const config = this._buildConfig();
       const ok = await testServerConnection(config);
-      this._connectionStatus = ok ? "success" : "error";
+      this._connectionStatus = ok ? 'success' : 'error';
     } catch {
-      this._connectionStatus = "error";
+      this._connectionStatus = 'error';
     }
     setTimeout(() => {
-      this._connectionStatus = "idle";
+      this._connectionStatus = 'idle';
     }, 3000);
   }
 
@@ -190,13 +180,9 @@ export class PopupView extends ComponentMixin(LitElement) {
    */
   private async _handleProbeLocalUrl(): Promise<void> {
     if (!this._localServerUrl) return;
-    await this._probeUrl(
-      this._localServerUrl,
-      "/System/Info/Public",
-      (status) => {
-        this._localUrlStatus = status;
-      },
-    );
+    await this._probeUrl(this._localServerUrl, '/System/Info/Public', (status) => {
+      this._localUrlStatus = status;
+    });
   }
 
   /**
@@ -204,13 +190,9 @@ export class PopupView extends ComponentMixin(LitElement) {
    */
   private async _handleProbeJellyseerrLocalUrl(): Promise<void> {
     if (!this._jellyseerrLocalUrl) return;
-    await this._probeUrl(
-      this._jellyseerrLocalUrl,
-      "/api/v1/status",
-      (status) => {
-        this._jellyseerrLocalUrlStatus = status;
-      },
-    );
+    await this._probeUrl(this._jellyseerrLocalUrl, '/api/v1/status', (status) => {
+      this._jellyseerrLocalUrlStatus = status;
+    });
   }
 
   /**
@@ -226,19 +208,19 @@ export class PopupView extends ComponentMixin(LitElement) {
   ): Promise<void> {
     const permissionGranted = await this._requestHostPermission(url);
     if (!permissionGranted) {
-      setStatus("unreachable");
-      setTimeout(() => setStatus("idle"), 3000);
+      setStatus('unreachable');
+      setTimeout(() => setStatus('idle'), 3000);
       return;
     }
 
-    setStatus("probing");
+    setStatus('probing');
     try {
       const reachable = await probeServerUrl(url, probePath);
-      setStatus(reachable ? "reachable" : "unreachable");
+      setStatus(reachable ? 'reachable' : 'unreachable');
     } catch {
-      setStatus("unreachable");
+      setStatus('unreachable');
     }
-    setTimeout(() => setStatus("idle"), 3000);
+    setTimeout(() => setStatus('idle'), 3000);
   }
 
   /**
@@ -250,13 +232,10 @@ export class PopupView extends ComponentMixin(LitElement) {
   private async _requestHostPermission(url: string): Promise<boolean> {
     try {
       const parsed = new URL(url);
-      const origin = `${parsed.protocol}//${parsed.hostname}${parsed.port ? `:${parsed.port}` : ""}/*`;
+      const origin = `${parsed.protocol}//${parsed.hostname}${parsed.port ? `:${parsed.port}` : ''}/*`;
 
       // If chrome.permissions API isn't available (sandbox), skip
-      if (
-        typeof chrome === "undefined" ||
-        typeof chrome.permissions === "undefined"
-      ) {
+      if (typeof chrome === 'undefined' || typeof chrome.permissions === 'undefined') {
         return true;
       }
 
@@ -270,16 +249,16 @@ export class PopupView extends ComponentMixin(LitElement) {
   }
 
   private async _handleTestJellyseerr(): Promise<void> {
-    this._jellyseerrStatus = "testing";
+    this._jellyseerrStatus = 'testing';
     try {
       const config = this._buildConfig();
       const ok = await testJellyseerrConnection(config);
-      this._jellyseerrStatus = ok ? "success" : "error";
+      this._jellyseerrStatus = ok ? 'success' : 'error';
     } catch {
-      this._jellyseerrStatus = "error";
+      this._jellyseerrStatus = 'error';
     }
     setTimeout(() => {
-      this._jellyseerrStatus = "idle";
+      this._jellyseerrStatus = 'idle';
     }, 3000);
   }
 
@@ -291,15 +270,14 @@ export class PopupView extends ComponentMixin(LitElement) {
   render() {
     return html`
       <div class="popup-container">
-        ${this._renderHeader()} ${this._renderServerSection()}
-        ${this._renderConnectionSection()} ${this._renderJellyseerrSection()}
-        ${this._renderActions()} ${this._renderFooter()}
+        ${this._renderHeader()} ${this._renderServerSection()} ${this._renderConnectionSection()}
+        ${this._renderJellyseerrSection()} ${this._renderActions()} ${this._renderFooter()}
       </div>
     `;
   }
 
   private _renderHeader() {
-    const icon = this.serverType === "emby" ? embyIcon(28) : jellyfinIcon(28);
+    const icon = this.serverType === 'emby' ? embyIcon(28) : jellyfinIcon(28);
     return html`
       <div class="header" part="header">
         <div class="header-icon">${icon}</div>
@@ -317,14 +295,14 @@ export class PopupView extends ComponentMixin(LitElement) {
         <div class="section-title">Server Type</div>
         <div class="server-toggle">
           <button
-            class="${this.serverType === "emby" ? "active" : ""}"
-            @click="${() => this._handleServerTypeChange("emby")}"
+            class="${this.serverType === 'emby' ? 'active' : ''}"
+            @click="${() => this._handleServerTypeChange('emby')}"
           >
             ${embyIcon(16)} Emby
           </button>
           <button
-            class="${this.serverType === "jellyfin" ? "active" : ""}"
-            @click="${() => this._handleServerTypeChange("jellyfin")}"
+            class="${this.serverType === 'jellyfin' ? 'active' : ''}"
+            @click="${() => this._handleServerTypeChange('jellyfin')}"
           >
             ${jellyfinIcon(16)} Jellyfin
           </button>
@@ -354,12 +332,9 @@ export class PopupView extends ComponentMixin(LitElement) {
           <button
             class="btn btn-probe"
             @click="${this._handleProbeLocalUrl}"
-            ?disabled="${this._localUrlStatus === "probing" ||
-            !this._localServerUrl}"
+            ?disabled="${this._localUrlStatus === 'probing' || !this._localServerUrl}"
           >
-            ${this._localUrlStatus === "probing"
-              ? "Probing..."
-              : "Probe Local URL"}
+            ${this._localUrlStatus === 'probing' ? 'Probing...' : 'Probe Local URL'}
           </button>
           ${this._renderProbeStatus(this._localUrlStatus)}
         </div>
@@ -393,11 +368,9 @@ export class PopupView extends ComponentMixin(LitElement) {
         <button
           class="btn btn-primary"
           @click="${this._handleTestConnection}"
-          ?disabled="${this._connectionStatus === "testing"}"
+          ?disabled="${this._connectionStatus === 'testing'}"
         >
-          ${this._connectionStatus === "testing"
-            ? "Testing..."
-            : "Test Connection"}
+          ${this._connectionStatus === 'testing' ? 'Testing...' : 'Test Connection'}
         </button>
         ${this._renderConnectionStatus()}
       </div>
@@ -405,39 +378,29 @@ export class PopupView extends ComponentMixin(LitElement) {
   }
 
   private _renderConnectionStatus() {
-    if (this._connectionStatus === "success") {
-      return html`<div class="status status-success">
-        Connected successfully!
-      </div>`;
+    if (this._connectionStatus === 'success') {
+      return html`<div class="status status-success">Connected successfully!</div>`;
     }
-    if (this._connectionStatus === "error") {
-      return html`<div class="status status-error">
-        Connection failed. Check URL and API key.
-      </div>`;
+    if (this._connectionStatus === 'error') {
+      return html`<div class="status status-error">Connection failed. Check URL and API key.</div>`;
     }
-    if (this._connectionStatus === "testing") {
-      return html`<div class="status status-loading">
-        Testing connection...
-      </div>`;
+    if (this._connectionStatus === 'testing') {
+      return html`<div class="status status-loading">Testing connection...</div>`;
     }
     return nothing;
   }
 
   private _renderProbeStatus(status: LocalUrlStatus) {
-    if (status === "reachable") {
-      return html`<div class="status status-success status-inline">
-        Local server reachable!
-      </div>`;
+    if (status === 'reachable') {
+      return html`<div class="status status-success status-inline">Local server reachable!</div>`;
     }
-    if (status === "unreachable") {
+    if (status === 'unreachable') {
       return html`<div class="status status-error status-inline">
         Local server not reachable — will use public URL.
       </div>`;
     }
-    if (status === "probing") {
-      return html`<div class="status status-loading status-inline">
-        Probing local server...
-      </div>`;
+    if (status === 'probing') {
+      return html`<div class="status status-loading status-inline">Probing local server...</div>`;
     }
     return nothing;
   }
@@ -460,18 +423,14 @@ export class PopupView extends ComponentMixin(LitElement) {
         ${this._jellyseerrEnabled
           ? html`
               <div class="form-group">
-                <label for="jellyseerr-local-url"
-                  >Local / LAN URL (preferred)</label
-                >
+                <label for="jellyseerr-local-url">Local / LAN URL (preferred)</label>
                 <input
                   id="jellyseerr-local-url"
                   type="url"
                   placeholder="http://192.168.1.100:5055"
                   .value="${this._jellyseerrLocalUrl}"
                   @input="${(e: Event) => {
-                    this._jellyseerrLocalUrl = (
-                      e.target as HTMLInputElement
-                    ).value;
+                    this._jellyseerrLocalUrl = (e.target as HTMLInputElement).value;
                   }}"
                 />
                 <span class="form-hint">
@@ -480,12 +439,10 @@ export class PopupView extends ComponentMixin(LitElement) {
                 <button
                   class="btn btn-probe"
                   @click="${this._handleProbeJellyseerrLocalUrl}"
-                  ?disabled="${this._jellyseerrLocalUrlStatus === "probing" ||
+                  ?disabled="${this._jellyseerrLocalUrlStatus === 'probing' ||
                   !this._jellyseerrLocalUrl}"
                 >
-                  ${this._jellyseerrLocalUrlStatus === "probing"
-                    ? "Probing..."
-                    : "Probe Local URL"}
+                  ${this._jellyseerrLocalUrlStatus === 'probing' ? 'Probing...' : 'Probe Local URL'}
                 </button>
                 ${this._renderProbeStatus(this._jellyseerrLocalUrlStatus)}
               </div>
@@ -512,20 +469,16 @@ export class PopupView extends ComponentMixin(LitElement) {
                   placeholder="Enter Jellyseerr API key"
                   .value="${this._jellyseerrApiKey}"
                   @input="${(e: Event) => {
-                    this._jellyseerrApiKey = (
-                      e.target as HTMLInputElement
-                    ).value;
+                    this._jellyseerrApiKey = (e.target as HTMLInputElement).value;
                   }}"
                 />
               </div>
               <button
                 class="btn btn-primary"
                 @click="${this._handleTestJellyseerr}"
-                ?disabled="${this._jellyseerrStatus === "testing"}"
+                ?disabled="${this._jellyseerrStatus === 'testing'}"
               >
-                ${this._jellyseerrStatus === "testing"
-                  ? "Testing..."
-                  : "Test Jellyseerr"}
+                ${this._jellyseerrStatus === 'testing' ? 'Testing...' : 'Test Jellyseerr'}
               </button>
               ${this._renderJellyseerrStatus()}
             `
@@ -535,33 +488,25 @@ export class PopupView extends ComponentMixin(LitElement) {
   }
 
   private _renderJellyseerrStatus() {
-    if (this._jellyseerrStatus === "success") {
-      return html`<div class="status status-success">
-        Jellyseerr connected!
-      </div>`;
+    if (this._jellyseerrStatus === 'success') {
+      return html`<div class="status status-success">Jellyseerr connected!</div>`;
     }
-    if (this._jellyseerrStatus === "error") {
-      return html`<div class="status status-error">
-        Jellyseerr connection failed.
-      </div>`;
+    if (this._jellyseerrStatus === 'error') {
+      return html`<div class="status status-error">Jellyseerr connection failed.</div>`;
     }
-    if (this._jellyseerrStatus === "testing") {
-      return html`<div class="status status-loading">
-        Testing Jellyseerr...
-      </div>`;
+    if (this._jellyseerrStatus === 'testing') {
+      return html`<div class="status status-loading">Testing Jellyseerr...</div>`;
     }
     return nothing;
   }
 
   private _renderActions() {
     return html`
-      <button class="btn btn-success" @click="${this._handleSave}">
-        Save Settings
-      </button>
-      ${this._saveStatus === "saved"
+      <button class="btn btn-success" @click="${this._handleSave}">Save Settings</button>
+      ${this._saveStatus === 'saved'
         ? html`<div class="status status-success">Settings saved!</div>`
         : nothing}
-      ${this._saveStatus === "error"
+      ${this._saveStatus === 'error'
         ? html`<div class="status status-error">Failed to save settings.</div>`
         : nothing}
     `;
@@ -578,6 +523,6 @@ export class PopupView extends ComponentMixin(LitElement) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "popup-view": PopupView;
+    'popup-view': PopupView;
   }
 }

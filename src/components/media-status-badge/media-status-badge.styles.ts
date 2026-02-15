@@ -1,6 +1,6 @@
-import { css } from "lit";
-import type { CSSResultOrNative } from "lit";
-import { themeStyles } from "../../styles/theme.css.js";
+import { css } from 'lit';
+import type { CSSResultOrNative } from 'lit';
+import { themeStyles } from '../../styles/theme.css.js';
 
 /**
  * Styles for the media-status-badge component.
@@ -46,11 +46,7 @@ export const mediaStatusBadgeStyles: CSSResultOrNative[] = [
     }
 
     .badge--unavailable {
-      background: linear-gradient(
-        135deg,
-        var(--color-primary),
-        var(--color-primary-dark)
-      );
+      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
     }
 
     .badge--loading {

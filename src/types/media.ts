@@ -1,22 +1,18 @@
 /**
  * Discriminated union for media type identification.
  */
-export type MediaType = "movie" | "series" | "season" | "episode";
+export type MediaType = 'movie' | 'series' | 'season' | 'episode';
 
 /**
  * Detected media context from a third-party page.
  */
-export type DetectedMedia =
-  | DetectedMovie
-  | DetectedSeries
-  | DetectedSeason
-  | DetectedEpisode;
+export type DetectedMedia = DetectedMovie | DetectedSeries | DetectedSeason | DetectedEpisode;
 
 /**
  * A detected movie with metadata.
  */
 export interface DetectedMovie {
-  readonly type: "movie";
+  readonly type: 'movie';
   readonly title: string;
   readonly year?: number;
   readonly imdbId?: string;
@@ -27,7 +23,7 @@ export interface DetectedMovie {
  * A detected TV series (show level).
  */
 export interface DetectedSeries {
-  readonly type: "series";
+  readonly type: 'series';
   readonly title: string;
   readonly year?: number;
   readonly imdbId?: string;
@@ -38,7 +34,7 @@ export interface DetectedSeries {
  * A detected season of a TV series.
  */
 export interface DetectedSeason {
-  readonly type: "season";
+  readonly type: 'season';
   readonly seriesTitle: string;
   readonly seasonNumber: number;
   readonly year?: number;
@@ -50,7 +46,7 @@ export interface DetectedSeason {
  * A detected episode of a TV series.
  */
 export interface DetectedEpisode {
-  readonly type: "episode";
+  readonly type: 'episode';
   readonly seriesTitle: string;
   readonly seasonNumber: number;
   readonly episodeNumber: number;
@@ -64,11 +60,11 @@ export interface DetectedEpisode {
  * Source site where media was detected.
  */
 export type SourceSite =
-  | "imdb"
-  | "trakt"
-  | "netflix"
-  | "amazon"
-  | "google"
-  | "bing"
-  | "justwatch"
-  | "unknown";
+  | 'imdb'
+  | 'trakt'
+  | 'netflix'
+  | 'amazon'
+  | 'google'
+  | 'bing'
+  | 'justwatch'
+  | 'unknown';

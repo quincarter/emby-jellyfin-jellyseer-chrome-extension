@@ -1,15 +1,15 @@
-import type { ExtensionConfig } from "../types/index.js";
-import { DEFAULT_CONFIG } from "../types/index.js";
+import type { ExtensionConfig } from '../types/index.js';
+import { DEFAULT_CONFIG } from '../types/index.js';
 
-const STORAGE_KEY = "mediaConnectorConfig";
+const STORAGE_KEY = 'mediaConnectorConfig';
 
 /**
  * Check if chrome.storage API is available (extension context).
  */
 const isChromeStorageAvailable = (): boolean =>
-  typeof chrome !== "undefined" &&
-  typeof chrome.storage !== "undefined" &&
-  typeof chrome.storage.local !== "undefined";
+  typeof chrome !== 'undefined' &&
+  typeof chrome.storage !== 'undefined' &&
+  typeof chrome.storage.local !== 'undefined';
 
 /**
  * Load extension configuration from storage.

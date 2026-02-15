@@ -1,5 +1,5 @@
-import { css } from "lit";
-import type { CSSResultOrNative } from "lit";
+import { css } from 'lit';
+import type { CSSResultOrNative } from 'lit';
 
 /**
  * Global CSS custom properties for the extension theme.
@@ -12,11 +12,7 @@ export const themeStyles: CSSResultOrNative[] = [
       --color-primary: #7b2fbe;
       --color-primary-light: #9b59d0;
       --color-primary-dark: #5a1f8e;
-      --color-primary-gradient: linear-gradient(
-        135deg,
-        #7b2fbe 0%,
-        #4a0e78 100%
-      );
+      --color-primary-gradient: linear-gradient(135deg, #7b2fbe 0%, #4a0e78 100%);
 
       /* Server brand colors */
       --color-emby: #52b54b;

@@ -1,10 +1,5 @@
-export type {
-  ServerType,
-  ServerConfig,
-  JellyseerrConfig,
-  ExtensionConfig,
-} from "./config.js";
-export { DEFAULT_CONFIG } from "./config.js";
+export type { ServerType, ServerConfig, JellyseerrConfig, ExtensionConfig } from './config.js';
+export { DEFAULT_CONFIG } from './config.js';
 export type {
   MediaType,
   DetectedMedia,
@@ -13,13 +8,13 @@ export type {
   DetectedSeason,
   DetectedEpisode,
   SourceSite,
-} from "./media.js";
+} from './media.js';
 export type {
   MediaServerItem,
   MediaServerUserData,
   MediaSearchResult,
   MediaAvailability,
-} from "./api.js";
+} from './api.js';
 export type {
   ExtensionMessage,
   CheckMediaMessage,
@@ -30,4 +25,4 @@ export type {
   GetConfigResponse,
   SaveConfigMessage,
   SaveConfigResponse,
-} from "./messages.js";
+} from './messages.js';

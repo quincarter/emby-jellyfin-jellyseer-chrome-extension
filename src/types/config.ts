@@ -1,7 +1,7 @@
 /**
  * Server type discriminator for Emby vs Jellyfin.
  */
-export type ServerType = "emby" | "jellyfin";
+export type ServerType = 'emby' | 'jellyfin';
 
 /**
  * Connection configuration for a media server.
@@ -46,15 +46,15 @@ export interface ExtensionConfig {
  */
 export const DEFAULT_CONFIG: ExtensionConfig = {
   server: {
-    serverType: "emby",
-    serverUrl: "",
-    localServerUrl: "",
-    apiKey: "",
+    serverType: 'emby',
+    serverUrl: '',
+    localServerUrl: '',
+    apiKey: '',
   },
   jellyseerr: {
     enabled: false,
-    serverUrl: "",
-    localServerUrl: "",
-    apiKey: "",
+    serverUrl: '',
+    localServerUrl: '',
+    apiKey: '',
   },
 };

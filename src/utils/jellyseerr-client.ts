@@ -1,5 +1,5 @@
-import type { ExtensionConfig } from "../types/index.js";
-import { resolveJellyseerrUrl } from "./url-resolver.js";
+import type { ExtensionConfig } from '../types/index.js';
+import { resolveJellyseerrUrl } from './url-resolver.js';
 
 /**
  * Build Jellyseerr API headers.
@@ -15,12 +15,10 @@ import { resolveJellyseerrUrl } from "./url-resolver.js";
  * @param config - Extension configuration
  * @returns Headers for Jellyseerr API requests
  */
-const buildJellyseerrHeaders = (
-  config: ExtensionConfig,
-): Record<string, string> => ({
-  "Content-Type": "application/json",
-  Accept: "application/json",
-  "X-Api-Key": config.jellyseerr.apiKey,
+const buildJellyseerrHeaders = (config: ExtensionConfig): Record<string, string> => ({
+  'Content-Type': 'application/json',
+  Accept: 'application/json',
+  'X-Api-Key': config.jellyseerr.apiKey,
 });
 
 /**
@@ -44,25 +42,23 @@ const getResolvedBaseUrl = async (config: ExtensionConfig): Promise<string> =>
  * relying solely on the `X-Api-Key` header.
  */
 const clearJellyseerrCookies = async (baseUrl: string): Promise<void> => {
-  if (typeof chrome === "undefined" || !chrome.cookies) {
+  if (typeof chrome === 'undefined' || !chrome.cookies) {
     return;
   }
 
   try {
     const url = new URL(baseUrl);
     const cookies = await chrome.cookies.getAll({ domain: url.hostname });
-    console.log(
-      `[Media Connector] Clearing ${cookies.length} cookies for ${url.hostname}`,
-    );
+    console.log(`[Media Connector] Clearing ${cookies.length} cookies for ${url.hostname}`);
     await Promise.all(
       cookies.map((cookie) => {
-        const protocol = cookie.secure ? "https" : "http";
-        const cookieUrl = `${protocol}://${cookie.domain.replace(/^\./, "")}${cookie.path}`;
+        const protocol = cookie.secure ? 'https' : 'http';
+        const cookieUrl = `${protocol}://${cookie.domain.replace(/^\./, '')}${cookie.path}`;
         return chrome.cookies.remove({ url: cookieUrl, name: cookie.name });
       }),
     );
   } catch (e) {
-    console.warn("[Media Connector] Failed to clear cookies:", e);
+    console.warn('[Media Connector] Failed to clear cookies:', e);
   }
 };
 
@@ -80,37 +76,32 @@ export const jellyseerrSearch = async (
   const trimmed = query.trim();
 
   if (!trimmed) {
-    throw new Error("Search query is empty");
+    throw new Error('Search query is empty');
   }
 
   const url = `${baseUrl}/api/v1/search?query=${encodeURIComponent(trimmed)}&page=1&language=en`;
 
   console.log(
-    "[Media Connector] Jellyseerr SEARCH request:",
-    "\n  Configured URL:",
+    '[Media Connector] Jellyseerr SEARCH request:',
+    '\n  Configured URL:',
     config.jellyseerr.serverUrl,
-    "\n  Local URL:",
-    config.jellyseerr.localServerUrl ?? "(none)",
-    "\n  Resolved URL:",
+    '\n  Local URL:',
+    config.jellyseerr.localServerUrl ?? '(none)',
+    '\n  Resolved URL:',
     baseUrl,
-    "\n  Full request URL:",
+    '\n  Full request URL:',
     url,
   );
 
   const response = await fetch(url, {
     headers: buildJellyseerrHeaders(config),
-    credentials: "omit",
+    credentials: 'omit',
   });
 
   if (!response.ok) {
-    const body = await response.text().catch(() => "(no body)");
-    console.error(
-      `[Media Connector] Jellyseerr search failed: ${response.status}`,
-      body,
-    );
-    throw new Error(
-      `Jellyseerr responded with ${response.status}: ${body.slice(0, 200)}`,
-    );
+    const body = await response.text().catch(() => '(no body)');
+    console.error(`[Media Connector] Jellyseerr search failed: ${response.status}`, body);
+    throw new Error(`Jellyseerr responded with ${response.status}: ${body.slice(0, 200)}`);
   }
 
   return response.json() as Promise<JellyseerrSearchResponse>;
@@ -134,46 +125,40 @@ export const requestMovie = async (
   await clearJellyseerrCookies(baseUrl);
 
   const requestUrl = `${baseUrl}/api/v1/request`;
-  const requestBody = { mediaType: "movie" as const, mediaId: tmdbId };
+  const requestBody = { mediaType: 'movie' as const, mediaId: tmdbId };
 
   console.log(
-    "[Media Connector] Jellyseerr REQUEST MOVIE:",
-    "\n  Configured URL:",
+    '[Media Connector] Jellyseerr REQUEST MOVIE:',
+    '\n  Configured URL:',
     config.jellyseerr.serverUrl,
-    "\n  Local URL:",
-    config.jellyseerr.localServerUrl ?? "(none)",
-    "\n  Resolved URL:",
+    '\n  Local URL:',
+    config.jellyseerr.localServerUrl ?? '(none)',
+    '\n  Resolved URL:',
     baseUrl,
-    "\n  POST:",
+    '\n  POST:',
     requestUrl,
-    "\n  Body:",
+    '\n  Body:',
     JSON.stringify(requestBody),
-    "\n  API Key:",
-    config.jellyseerr.apiKey ? `${config.jellyseerr.apiKey.slice(0, 4)}...` : "(missing)",
+    '\n  API Key:',
+    config.jellyseerr.apiKey ? `${config.jellyseerr.apiKey.slice(0, 4)}...` : '(missing)',
   );
 
   const response = await fetch(requestUrl, {
-    method: "POST",
+    method: 'POST',
     headers,
-    credentials: "omit",
+    credentials: 'omit',
     body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(
-      "[Media Connector] Jellyseerr movie request failed:",
-      response.status,
-      errorBody,
-    );
-    if (errorBody.toLowerCase().includes("csrf")) {
+    console.error('[Media Connector] Jellyseerr movie request failed:', response.status, errorBody);
+    if (errorBody.toLowerCase().includes('csrf')) {
       console.error(
-        `[Media Connector] ⚠️ CSRF error detected! Please disable CSRF protection in your Jellyseerr settings:\n  → ${baseUrl}/settings/network\n  Uncheck \"Enable CSRF Protection\" and save.`,
+        `[Media Connector] ⚠️ CSRF error detected! Please disable CSRF protection in your Jellyseerr settings:\n  → ${baseUrl}/settings/network\n  Uncheck "Enable CSRF Protection" and save.`,
       );
     }
-    throw new Error(
-      `Jellyseerr request failed (${response.status}): ${errorBody}`,
-    );
+    throw new Error(`Jellyseerr request failed (${response.status}): ${errorBody}`);
   }
 
   return response.json() as Promise<JellyseerrRequestResult>;
@@ -194,12 +179,12 @@ export const requestTvShow = async (
   const baseUrl = await getResolvedBaseUrl(config);
 
   const body: Record<string, unknown> = {
-    mediaType: "tv",
+    mediaType: 'tv',
     mediaId: tmdbId,
   };
 
   if (seasons && seasons.length > 0) {
-    body["seasons"] = seasons;
+    body['seasons'] = seasons;
   }
 
   const headers = buildJellyseerrHeaders(config);
@@ -211,43 +196,37 @@ export const requestTvShow = async (
   const requestUrl = `${baseUrl}/api/v1/request`;
 
   console.log(
-    "[Media Connector] Jellyseerr REQUEST TV SHOW:",
-    "\n  Configured URL:",
+    '[Media Connector] Jellyseerr REQUEST TV SHOW:',
+    '\n  Configured URL:',
     config.jellyseerr.serverUrl,
-    "\n  Local URL:",
-    config.jellyseerr.localServerUrl ?? "(none)",
-    "\n  Resolved URL:",
+    '\n  Local URL:',
+    config.jellyseerr.localServerUrl ?? '(none)',
+    '\n  Resolved URL:',
     baseUrl,
-    "\n  POST:",
+    '\n  POST:',
     requestUrl,
-    "\n  Body:",
+    '\n  Body:',
     JSON.stringify(body),
-    "\n  API Key:",
-    config.jellyseerr.apiKey ? `${config.jellyseerr.apiKey.slice(0, 4)}...` : "(missing)",
+    '\n  API Key:',
+    config.jellyseerr.apiKey ? `${config.jellyseerr.apiKey.slice(0, 4)}...` : '(missing)',
   );
 
   const response = await fetch(requestUrl, {
-    method: "POST",
+    method: 'POST',
     headers,
-    credentials: "omit",
+    credentials: 'omit',
     body: JSON.stringify(body),
   });
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(
-      "[Media Connector] Jellyseerr TV request failed:",
-      response.status,
-      errorBody,
-    );
-    if (errorBody.toLowerCase().includes("csrf")) {
+    console.error('[Media Connector] Jellyseerr TV request failed:', response.status, errorBody);
+    if (errorBody.toLowerCase().includes('csrf')) {
       console.error(
-        `[Media Connector] ⚠️ CSRF error detected! Please disable CSRF protection in your Jellyseerr settings:\n  → ${baseUrl}/settings/network\n  Uncheck \"Enable CSRF Protection\" and save.`,
+        `[Media Connector] ⚠️ CSRF error detected! Please disable CSRF protection in your Jellyseerr settings:\n  → ${baseUrl}/settings/network\n  Uncheck "Enable CSRF Protection" and save.`,
       );
     }
-    throw new Error(
-      `Jellyseerr request failed (${response.status}): ${errorBody}`,
-    );
+    throw new Error(`Jellyseerr request failed (${response.status}): ${errorBody}`);
   }
 
   return response.json() as Promise<JellyseerrRequestResult>;
@@ -258,34 +237,32 @@ export const requestTvShow = async (
  * @param config - Extension configuration
  * @returns True if reachable
  */
-export const testJellyseerrConnection = async (
-  config: ExtensionConfig,
-): Promise<boolean> => {
+export const testJellyseerrConnection = async (config: ExtensionConfig): Promise<boolean> => {
   try {
     const baseUrl = await getResolvedBaseUrl(config);
     const testUrl = `${baseUrl}/api/v1/status`;
 
     console.log(
-      "[Media Connector] Jellyseerr TEST CONNECTION:",
-      "\n  Configured URL:",
+      '[Media Connector] Jellyseerr TEST CONNECTION:',
+      '\n  Configured URL:',
       config.jellyseerr.serverUrl,
-      "\n  Local URL:",
-      config.jellyseerr.localServerUrl ?? "(none)",
-      "\n  Resolved URL:",
+      '\n  Local URL:',
+      config.jellyseerr.localServerUrl ?? '(none)',
+      '\n  Resolved URL:',
       baseUrl,
-      "\n  GET:",
+      '\n  GET:',
       testUrl,
     );
 
     const response = await fetch(testUrl, {
       headers: buildJellyseerrHeaders(config),
-      credentials: "omit",
+      credentials: 'omit',
     });
 
     console.log(
-      "[Media Connector] Jellyseerr TEST CONNECTION result:",
+      '[Media Connector] Jellyseerr TEST CONNECTION result:',
       response.status,
-      response.ok ? "OK" : "FAILED",
+      response.ok ? 'OK' : 'FAILED',
     );
 
     return response.ok;
@@ -309,7 +286,7 @@ export interface JellyseerrSearchResponse {
  */
 export interface JellyseerrSearchResult {
   readonly id: number;
-  readonly mediaType: "movie" | "tv";
+  readonly mediaType: 'movie' | 'tv';
   readonly title?: string;
   readonly name?: string;
   readonly releaseDate?: string;

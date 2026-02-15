@@ -1,4 +1,4 @@
-import type { DetectedMedia, SourceSite } from "../types/index.js";
+import type { DetectedMedia, SourceSite } from '../types/index.js';
 
 /**
  * Identify the current site from the URL.
@@ -8,16 +8,15 @@ import type { DetectedMedia, SourceSite } from "../types/index.js";
 export const identifySite = (url: string): SourceSite => {
   const hostname = new URL(url).hostname;
 
-  if (hostname.includes("imdb.com")) return "imdb";
-  if (hostname.includes("trakt.tv")) return "trakt";
-  if (hostname.includes("netflix.com")) return "netflix";
-  if (hostname.includes("amazon.com") || hostname.includes("primevideo.com"))
-    return "amazon";
-  if (hostname.includes("google.com")) return "google";
-  if (hostname.includes("bing.com")) return "bing";
-  if (hostname.includes("justwatch.com")) return "justwatch";
+  if (hostname.includes('imdb.com')) return 'imdb';
+  if (hostname.includes('trakt.tv')) return 'trakt';
+  if (hostname.includes('netflix.com')) return 'netflix';
+  if (hostname.includes('amazon.com') || hostname.includes('primevideo.com')) return 'amazon';
+  if (hostname.includes('google.com')) return 'google';
+  if (hostname.includes('bing.com')) return 'bing';
+  if (hostname.includes('justwatch.com')) return 'justwatch';
 
-  return "unknown";
+  return 'unknown';
 };
 
 /**
@@ -29,19 +28,19 @@ export const detectMedia = (): DetectedMedia | undefined => {
   const site = identifySite(window.location.href);
 
   switch (site) {
-    case "imdb":
+    case 'imdb':
       return detectFromImdb();
-    case "trakt":
+    case 'trakt':
       return detectFromTrakt();
-    case "netflix":
+    case 'netflix':
       return detectFromNetflix();
-    case "amazon":
+    case 'amazon':
       return detectFromAmazon();
-    case "google":
+    case 'google':
       return detectFromGoogle();
-    case "bing":
+    case 'bing':
       return detectFromBing();
-    case "justwatch":
+    case 'justwatch':
       return detectFromJustWatch();
     default:
       return undefined;
@@ -78,8 +77,7 @@ const detectFromImdb = (): DetectedMedia | undefined => {
 
   // Get title from page
   const titleElement =
-    document.querySelector('[data-testid="hero__pageTitle"] span') ??
-    document.querySelector("h1");
+    document.querySelector('[data-testid="hero__pageTitle"] span') ?? document.querySelector('h1');
   const title = titleElement?.textContent?.trim();
 
   if (!title) return undefined;
@@ -88,7 +86,7 @@ const detectFromImdb = (): DetectedMedia | undefined => {
   const seasonMatch = url.match(/episodes\?season=(\d+)/);
   if (seasonMatch) {
     return {
-      type: "season",
+      type: 'season',
       seriesTitle: title,
       seasonNumber: parseInt(seasonMatch[1], 10),
       imdbId,
@@ -100,15 +98,13 @@ const detectFromImdb = (): DetectedMedia | undefined => {
     '[data-testid="hero-subnav-bar-season-episode-numbers-section"]',
   );
   if (episodeInfo) {
-    const seText = episodeInfo.textContent ?? "";
+    const seText = episodeInfo.textContent ?? '';
     const seMatch = seText.match(/S(\d+).*?E(\d+)/i);
     if (seMatch) {
-      const seriesLink = document.querySelector(
-        '[data-testid="hero-title-block__series-link"]',
-      );
+      const seriesLink = document.querySelector('[data-testid="hero-title-block__series-link"]');
       const seriesTitle = seriesLink?.textContent?.trim() ?? title;
       return {
-        type: "episode",
+        type: 'episode',
         seriesTitle,
         seasonNumber: parseInt(seMatch[1], 10),
         episodeNumber: parseInt(seMatch[2], 10),
@@ -119,17 +115,14 @@ const detectFromImdb = (): DetectedMedia | undefined => {
   }
 
   // Check if it's a TV series (has "TV Series" or "TV Mini Series" label)
-  const typeIndicator = document.querySelector(
-    '[data-testid="hero-title-block__metadata"] li',
-  );
-  const typeText = typeIndicator?.textContent?.toLowerCase() ?? "";
+  const typeIndicator = document.querySelector('[data-testid="hero-title-block__metadata"] li');
+  const typeText = typeIndicator?.textContent?.toLowerCase() ?? '';
 
-  if (typeText.includes("tv series") || typeText.includes("tv mini")) {
+  if (typeText.includes('tv series') || typeText.includes('tv mini')) {
     const yearText =
-      document.querySelector('[data-testid="hero-title-block__metadata"]')
-        ?.textContent ?? "";
+      document.querySelector('[data-testid="hero-title-block__metadata"]')?.textContent ?? '';
     return {
-      type: "series",
+      type: 'series',
       title,
       year: extractYear(yearText),
       imdbId,
@@ -138,10 +131,9 @@ const detectFromImdb = (): DetectedMedia | undefined => {
 
   // Default to movie
   const yearText =
-    document.querySelector('[data-testid="hero-title-block__metadata"]')
-      ?.textContent ?? "";
+    document.querySelector('[data-testid="hero-title-block__metadata"]')?.textContent ?? '';
   return {
-    type: "movie",
+    type: 'movie',
     title,
     year: extractYear(yearText),
     imdbId,
@@ -153,9 +145,7 @@ const detectFromImdb = (): DetectedMedia | undefined => {
  * Trakt pages typically have external links to IMDb in the sidebar.
  */
 const extractImdbIdFromPage = (): string | undefined => {
-  const link = document.querySelector<HTMLAnchorElement>(
-    'a[href*="imdb.com/title/tt"]',
-  );
+  const link = document.querySelector<HTMLAnchorElement>('a[href*="imdb.com/title/tt"]');
   if (link) {
     const match = link.href.match(/(tt\d+)/);
     if (match) return match[1];
@@ -185,35 +175,31 @@ const extractTmdbIdFromPage = (): string | undefined => {
 const detectFromTrakt = (): DetectedMedia | undefined => {
   const url = window.location.href;
 
-  const titleElement = document.querySelector("h1");
+  const titleElement = document.querySelector('h1');
   const title = titleElement?.textContent?.trim();
   if (!title) return undefined;
 
-  const yearElement = document.querySelector(".year");
-  const year = yearElement
-    ? extractYear(yearElement.textContent ?? "")
-    : undefined;
+  const yearElement = document.querySelector('.year');
+  const year = yearElement ? extractYear(yearElement.textContent ?? '') : undefined;
 
   // Extract external IDs from page links (sidebar external links)
   const imdbId = extractImdbIdFromPage();
   const tmdbId = extractTmdbIdFromPage();
 
   console.log(
-    `[Media Connector] Trakt detection — title: "${title}", year: ${year}, imdbId: ${imdbId ?? "none"}, tmdbId: ${tmdbId ?? "none"}`,
+    `[Media Connector] Trakt detection — title: "${title}", year: ${year}, imdbId: ${imdbId ?? 'none'}, tmdbId: ${tmdbId ?? 'none'}`,
   );
 
   // Trakt movie pages: /movies/movie-slug
-  if (url.includes("/movies/")) {
-    return { type: "movie", title, year, imdbId, tmdbId };
+  if (url.includes('/movies/')) {
+    return { type: 'movie', title, year, imdbId, tmdbId };
   }
 
   // Trakt show pages with season/episode: /shows/show-slug/seasons/X/episodes/Y
-  const episodeMatch = url.match(
-    /\/shows\/[^/]+\/seasons\/(\d+)\/episodes\/(\d+)/,
-  );
+  const episodeMatch = url.match(/\/shows\/[^/]+\/seasons\/(\d+)\/episodes\/(\d+)/);
   if (episodeMatch) {
     return {
-      type: "episode",
+      type: 'episode',
       seriesTitle: title,
       seasonNumber: parseInt(episodeMatch[1], 10),
       episodeNumber: parseInt(episodeMatch[2], 10),
@@ -226,7 +212,7 @@ const detectFromTrakt = (): DetectedMedia | undefined => {
   const seasonMatch = url.match(/\/shows\/[^/]+\/seasons\/(\d+)/);
   if (seasonMatch) {
     return {
-      type: "season",
+      type: 'season',
       seriesTitle: title,
       seasonNumber: parseInt(seasonMatch[1], 10),
       imdbId,
@@ -235,8 +221,8 @@ const detectFromTrakt = (): DetectedMedia | undefined => {
   }
 
   // Trakt show pages: /shows/show-slug
-  if (url.includes("/shows/")) {
-    return { type: "series", title, year, imdbId, tmdbId };
+  if (url.includes('/shows/')) {
+    return { type: 'series', title, year, imdbId, tmdbId };
   }
 
   return undefined;
@@ -248,9 +234,9 @@ const detectFromTrakt = (): DetectedMedia | undefined => {
 const detectFromNetflix = (): DetectedMedia | undefined => {
   // Netflix title pages: /title/XXXXXXXX
   const titleElement =
-    document.querySelector(".title-title") ??
+    document.querySelector('.title-title') ??
     document.querySelector('[data-uia="video-title"]') ??
-    document.querySelector("h1");
+    document.querySelector('h1');
 
   const title = titleElement?.textContent?.trim();
   if (!title) return undefined;
@@ -258,10 +244,10 @@ const detectFromNetflix = (): DetectedMedia | undefined => {
   // Check for episodes indicator
   const episodeSelector = document.querySelector('[data-uia="episode-item"]');
   if (episodeSelector) {
-    return { type: "series", title };
+    return { type: 'series', title };
   }
 
-  return { type: "movie", title };
+  return { type: 'movie', title };
 };
 
 /**
@@ -270,28 +256,22 @@ const detectFromNetflix = (): DetectedMedia | undefined => {
 const detectFromAmazon = (): DetectedMedia | undefined => {
   const titleElement =
     document.querySelector('[data-automation-id="title"]') ??
-    document.querySelector(".av-detail-section h1") ??
-    document.querySelector("h1");
+    document.querySelector('.av-detail-section h1') ??
+    document.querySelector('h1');
 
   const title = titleElement?.textContent?.trim();
   if (!title) return undefined;
 
-  const yearElement = document.querySelector(
-    '[data-automation-id="release-year-badge"]',
-  );
-  const year = yearElement
-    ? extractYear(yearElement.textContent ?? "")
-    : undefined;
+  const yearElement = document.querySelector('[data-automation-id="release-year-badge"]');
+  const year = yearElement ? extractYear(yearElement.textContent ?? '') : undefined;
 
   // Check for season/episode selectors
-  const seasonSelector = document.querySelector(
-    '[data-automation-id="season-selector"]',
-  );
+  const seasonSelector = document.querySelector('[data-automation-id="season-selector"]');
   if (seasonSelector) {
-    return { type: "series", title, year };
+    return { type: 'series', title, year };
   }
 
-  return { type: "movie", title, year };
+  return { type: 'movie', title, year };
 };
 
 /**
@@ -301,8 +281,7 @@ const detectFromAmazon = (): DetectedMedia | undefined => {
  */
 const detectFromGoogle = (): DetectedMedia | undefined => {
   const knowledgePanel =
-    document.querySelector('[data-attrid="title"]') ??
-    document.querySelector(".kno-ecr-pt");
+    document.querySelector('[data-attrid="title"]') ?? document.querySelector('.kno-ecr-pt');
 
   if (!knowledgePanel) return undefined;
 
@@ -310,37 +289,35 @@ const detectFromGoogle = (): DetectedMedia | undefined => {
   if (!title) return undefined;
 
   const typeLabel =
-    document.querySelector('[data-attrid="subtitle"]') ??
-    document.querySelector(".kno-ecr-st");
-  const typeText = typeLabel?.textContent?.toLowerCase() ?? "";
+    document.querySelector('[data-attrid="subtitle"]') ?? document.querySelector('.kno-ecr-st');
+  const typeText = typeLabel?.textContent?.toLowerCase() ?? '';
 
   const yearMatch = typeText.match(/\b(19|20)\d{2}\b/);
   const year = yearMatch ? parseInt(yearMatch[0], 10) : undefined;
 
   // Explicit type keywords in the subtitle
   if (
-    typeText.includes("tv series") ||
-    typeText.includes("tv show") ||
-    typeText.includes("tv mini")
+    typeText.includes('tv series') ||
+    typeText.includes('tv show') ||
+    typeText.includes('tv mini')
   ) {
-    return { type: "series", title, year };
+    return { type: 'series', title, year };
   }
 
-  if (typeText.includes("film") || typeText.includes("movie")) {
-    return { type: "movie", title, year };
+  if (typeText.includes('film') || typeText.includes('movie')) {
+    return { type: 'movie', title, year };
   }
 
   // Google embeds structured type info in data-maindata on the knowledge panel.
   // e.g. ["FILM"] or "TVM" (TV Movie). Check for these signals.
-  const kpElement = document.querySelector<HTMLElement>("[data-maindata]");
+  const kpElement = document.querySelector<HTMLElement>('[data-maindata]');
   if (kpElement) {
-    const maindata =
-      kpElement.getAttribute("data-maindata")?.toUpperCase() ?? "";
+    const maindata = kpElement.getAttribute('data-maindata')?.toUpperCase() ?? '';
     if (maindata.includes('"TV_SERIES"') || maindata.includes('"TV_SHOW"')) {
-      return { type: "series", title, year };
+      return { type: 'series', title, year };
     }
     if (maindata.includes('"FILM"') || maindata.includes('"TVM"')) {
-      return { type: "movie", title, year };
+      return { type: 'movie', title, year };
     }
   }
 
@@ -353,11 +330,11 @@ const detectFromGoogle = (): DetectedMedia | undefined => {
   );
 
   if (hasTvAttrib) {
-    return { type: "series", title, year };
+    return { type: 'series', title, year };
   }
 
   if (hasFilmAttrib || hasRuntime) {
-    return { type: "movie", title, year };
+    return { type: 'movie', title, year };
   }
 
   return undefined;
@@ -369,30 +346,28 @@ const detectFromGoogle = (): DetectedMedia | undefined => {
  * year/type information (e.g. "2019 Film").
  */
 const detectFromBing = (): DetectedMedia | undefined => {
-  const titleElement =
-    document.querySelector<HTMLHeadingElement>("h2.wpt_title");
+  const titleElement = document.querySelector<HTMLHeadingElement>('h2.wpt_title');
   if (!titleElement) return undefined;
 
   const title = titleElement.textContent?.trim();
   if (!title) return undefined;
 
-  const subtitleElement =
-    document.querySelector<HTMLSpanElement>("span.wpt_subtitle");
-  const subtitleText = subtitleElement?.textContent?.toLowerCase() ?? "";
+  const subtitleElement = document.querySelector<HTMLSpanElement>('span.wpt_subtitle');
+  const subtitleText = subtitleElement?.textContent?.toLowerCase() ?? '';
 
   const yearMatch = subtitleText.match(/\b(19|20)\d{2}\b/);
   const year = yearMatch ? parseInt(yearMatch[0], 10) : undefined;
 
   if (
-    subtitleText.includes("tv series") ||
-    subtitleText.includes("tv show") ||
-    subtitleText.includes("tv mini")
+    subtitleText.includes('tv series') ||
+    subtitleText.includes('tv show') ||
+    subtitleText.includes('tv mini')
   ) {
-    return { type: "series", title, year };
+    return { type: 'series', title, year };
   }
 
-  if (subtitleText.includes("film") || subtitleText.includes("movie")) {
-    return { type: "movie", title, year };
+  if (subtitleText.includes('film') || subtitleText.includes('movie')) {
+    return { type: 'movie', title, year };
   }
 
   return undefined;
@@ -412,11 +387,11 @@ const cleanJustWatchTitle = (raw: string): string | undefined => {
   const cleaned = raw
     // "Title - watch tv show streaming online" → "Title"
     // "Title - watch movie streaming online"   → "Title"
-    .replace(/\s*[-–]\s*watch\s+(tv\s+show|movie|tv\s+series).*$/i, "")
+    .replace(/\s*[-–]\s*watch\s+(tv\s+show|movie|tv\s+series).*$/i, '')
     // "Title streaming: watch online" → "Title"
-    .replace(/\s*streaming\s*[:.]?\s*watch.*$/i, "")
+    .replace(/\s*streaming\s*[:.]?\s*watch.*$/i, '')
     // "Title | JustWatch" → "Title"
-    .replace(/\s*\|\s*JustWatch$/i, "")
+    .replace(/\s*\|\s*JustWatch$/i, '')
     .trim();
 
   return cleaned || undefined;
@@ -446,7 +421,7 @@ const detectFromJustWatch = (): DetectedMedia | undefined => {
 
   const ogTitle = document
     .querySelector<HTMLMetaElement>('meta[property="og:title"]')
-    ?.getAttribute("content");
+    ?.getAttribute('content');
   if (ogTitle) {
     // Strip common JustWatch suffixes:
     //   "Title streaming: watch online"
@@ -457,12 +432,12 @@ const detectFromJustWatch = (): DetectedMedia | undefined => {
   }
 
   if (!title) {
-    title = cleanJustWatchTitle(document.title ?? "");
+    title = cleanJustWatchTitle(document.title ?? '');
   }
 
   if (!title) {
     // Try the hero title element (Vue scoped, but the class is stable)
-    const heroTitle = document.querySelector("h1");
+    const heroTitle = document.querySelector('h1');
     title = heroTitle?.textContent?.trim();
   }
 
@@ -472,9 +447,9 @@ const detectFromJustWatch = (): DetectedMedia | undefined => {
   let year: number | undefined;
 
   // Try inline scripts containing Apollo cache data
-  const scripts = document.querySelectorAll("script");
+  const scripts = document.querySelectorAll('script');
   for (const script of scripts) {
-    const text = script.textContent ?? "";
+    const text = script.textContent ?? '';
     const yearMatch = text.match(/"originalReleaseYear"\s*:\s*(\d{4})/);
     if (yearMatch) {
       year = parseInt(yearMatch[1], 10);
@@ -484,9 +459,9 @@ const detectFromJustWatch = (): DetectedMedia | undefined => {
 
   // Fallback: try extracting year from visible release year element
   if (!year) {
-    const releaseYearEl = document.querySelector(".release-year");
+    const releaseYearEl = document.querySelector('.release-year');
     if (releaseYearEl) {
-      year = extractYear(releaseYearEl.textContent ?? "");
+      year = extractYear(releaseYearEl.textContent ?? '');
     }
   }
 
@@ -496,7 +471,7 @@ const detectFromJustWatch = (): DetectedMedia | undefined => {
   }
 
   if (isMovie) {
-    return { type: "movie", title, year };
+    return { type: 'movie', title, year };
   }
 
   // TV show — check for season in the URL
@@ -504,12 +479,12 @@ const detectFromJustWatch = (): DetectedMedia | undefined => {
   const seasonMatch = path.match(/\/tv-show\/[^/]+\/season-(\d+)$/);
   if (seasonMatch) {
     return {
-      type: "season",
+      type: 'season',
       seriesTitle: title,
       seasonNumber: parseInt(seasonMatch[1], 10),
       year,
     };
   }
 
-  return { type: "series", title, year };
+  return { type: 'series', title, year };
 };
