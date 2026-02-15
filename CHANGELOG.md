@@ -1,5 +1,11 @@
 # @quincarter/ive-got-this-extension
 
+## 1.0.4
+
+### Patch Changes
+
+- 31714d3: updating chrome publish logic
+
 ## 1.0.3
 
 ### Patch Changes
