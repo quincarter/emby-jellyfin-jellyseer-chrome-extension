@@ -70,4 +70,5 @@ export type SourceSite =
   | "amazon"
   | "google"
   | "bing"
+  | "justwatch"
   | "unknown";

@@ -390,6 +390,22 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
       );
     }
 
+    // If a year was provided, prefer the result matching that year.
+    // Fall back to all filtered results if no year match is found.
+    if (message.payload.year) {
+      const targetYear = message.payload.year;
+      const yearMatched = filtered.filter((r) => {
+        const dateStr = r.releaseDate ?? r.firstAirDate;
+        const resultYear = dateStr
+          ? parseInt(dateStr.slice(0, 4), 10)
+          : undefined;
+        return resultYear === targetYear;
+      });
+      if (yearMatched.length > 0) {
+        filtered = yearMatched;
+      }
+    }
+
     // Build the item URL base
     const serverUrl = config.server.serverUrl;
     const jellyseerrUrl = config.jellyseerr.serverUrl;
@@ -428,8 +444,10 @@ const handleSearchJellyseerr = async (message: SearchJellyseerrMessage) => {
               "resolvedUrl:",
               resolvedUrl,
             );
+            // Map Jellyseerr mediaType to Emby/Jellyfin item type
+            const itemType = r.mediaType === "movie" ? "Movie" : "Series";
             const serverResults = await withTimeout(
-              searchByProviderId(config, tmdbId, "Tmdb"),
+              searchByProviderId(config, tmdbId, "Tmdb", itemType),
               5000,
             );
             console.log(

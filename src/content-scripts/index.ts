@@ -40,6 +40,17 @@ const init = async (): Promise<void> => {
     return;
   }
 
+  // JustWatch: search results page gets per-row provider icons,
+  // title detail pages get a full card in the buybox area
+  if (site === "justwatch") {
+    if (window.location.pathname.includes("/search")) {
+      initJustWatchSearch();
+    } else {
+      initJustWatch();
+    }
+    return;
+  }
+
   // Non-SPA sites: detect once and inject
   const media = detectMedia();
   if (!media) return;
@@ -666,6 +677,690 @@ const appendCardToImdbPage = (card: HTMLDivElement): void => {
   if (main) {
     main.prepend(card);
   }
+};
+
+/* ------------------------------------------------------------------ */
+/*  JustWatch integration                                             */
+/* ------------------------------------------------------------------ */
+
+const JUSTWATCH_CARD_ID = "media-connector-justwatch-card";
+const JUSTWATCH_SKELETON_ID = "media-connector-justwatch-skeleton";
+
+/**
+ * JustWatch-specific init.
+ * JustWatch is a Vue/Nuxt SPA, so we use a MutationObserver to handle
+ * client-side navigations and Vue re-renders (similar to Trakt).
+ *
+ * The card is injected before the "buybox-container" — the "Watch Now" /
+ * "Where to Watch" streaming offers section.
+ */
+const initJustWatch = (): void => {
+  let lastUrl = window.location.href;
+  let injected = false;
+  let detecting = false;
+
+  const detect = async (): Promise<void> => {
+    if (detecting || injected) return;
+    detecting = true;
+
+    try {
+      const media = detectMedia();
+      if (!media) return;
+
+      const title =
+        media.type === "season" || media.type === "episode"
+          ? media.seriesTitle
+          : media.title;
+
+      const mediaType =
+        media.type === "movie" ? ("movie" as const) : ("tv" as const);
+
+      console.log("[Media Connector] JustWatch detected media:", {
+        title,
+        mediaType,
+        year: media.year,
+      });
+
+      // Fetch config for server label
+      const configRes = await sendMessage<GetConfigResponse>({
+        type: "GET_CONFIG",
+      });
+      const serverLabel =
+        configRes?.payload.serverType === "jellyfin" ? "Jellyfin" : "Emby";
+
+      // Show skeleton while waiting for Jellyseerr
+      showJustWatchSkeleton(serverLabel);
+
+      const response = await sendMessage<SearchJellyseerrResponse>({
+        type: "SEARCH_JELLYSEERR",
+        payload: { query: title, mediaType, year: media.year },
+      });
+
+      // Remove skeleton
+      removeJustWatchSkeleton();
+
+      if (!response) {
+        console.log("[Media Connector] No response from service worker");
+        return;
+      }
+
+      console.log("[Media Connector] Jellyseerr response:", response);
+      injectJustWatchCard(response, title);
+      injected = true;
+    } finally {
+      detecting = false;
+    }
+  };
+
+  const onMutation = (): void => {
+    const currentUrl = window.location.href;
+
+    // SPA navigation — URL changed, reset and re-detect
+    if (currentUrl !== lastUrl) {
+      lastUrl = currentUrl;
+      injected = false;
+      // Clean up old card/skeleton
+      document.getElementById(JUSTWATCH_CARD_ID)?.remove();
+      document.getElementById(JUSTWATCH_SKELETON_ID)?.remove();
+      detect();
+      return;
+    }
+
+    // If we already injected, make sure the card is still in the DOM
+    if (injected) {
+      if (!document.getElementById(JUSTWATCH_CARD_ID)) {
+        injected = false;
+        detect();
+      }
+      return;
+    }
+
+    // Haven't detected yet — wait for the buybox anchor to appear
+    const buybox =
+      document.querySelector(".buybox-container") ??
+      document.getElementById("buybox-anchor");
+    if (buybox) {
+      detect();
+    }
+  };
+
+  // Try immediately, then observe for Vue renders
+  detect();
+
+  const observer = new MutationObserver(() => onMutation());
+  observer.observe(document.body, { childList: true, subtree: true });
+};
+
+/**
+ * Show a skeleton loading placeholder on JustWatch,
+ * inserted before the buybox container.
+ */
+const showJustWatchSkeleton = (serverLabel: string): void => {
+  if (document.getElementById(JUSTWATCH_SKELETON_ID)) return;
+  injectSkeletonKeyframes();
+
+  const shimmerBg =
+    "linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%)";
+  const shimmerStyle = `background: ${shimmerBg}; background-size: 800px 100%; animation: mcShimmer 1.6s ease-in-out infinite;`;
+
+  const skeleton = document.createElement("div");
+  skeleton.id = JUSTWATCH_SKELETON_ID;
+  Object.assign(skeleton.style, {
+    fontFamily: "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    background: "linear-gradient(145deg, #1a1130 0%, #120d20 100%)",
+    border: "1px solid rgba(123, 47, 190, 0.35)",
+    borderRadius: "16px",
+    padding: "20px",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.45)",
+    marginBottom: "24px",
+  });
+
+  skeleton.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+      ${JELLYSEERR_LOGO}
+      <div>
+        <div style="font-weight:700;font-size:15px;color:#d0bcff;">Media Server Connector</div>
+        <div style="font-size:11px;color:#a89cc0;margin-top:2px;">Powered by Jellyseerr &middot; ${serverLabel}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <div style="width:60px;height:90px;border-radius:8px;flex-shrink:0;${shimmerStyle}"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding-top:4px;">
+        <div style="width:75%;height:14px;border-radius:4px;${shimmerStyle}"></div>
+        <div style="width:40%;height:11px;border-radius:4px;${shimmerStyle}"></div>
+        <div style="width:55%;height:20px;border-radius:6px;${shimmerStyle}"></div>
+        <div style="width:50%;height:26px;border-radius:6px;margin-top:4px;${shimmerStyle}"></div>
+      </div>
+    </div>
+  `;
+
+  appendCardToJustWatchPage(skeleton);
+};
+
+/**
+ * Remove the JustWatch skeleton placeholder from the DOM.
+ */
+const removeJustWatchSkeleton = (): void => {
+  document.getElementById(JUSTWATCH_SKELETON_ID)?.remove();
+};
+
+/**
+ * Build and inject the media connector card into the JustWatch page,
+ * positioned before the buybox (streaming offers) section.
+ */
+const injectJustWatchCard = (
+  response: SearchJellyseerrResponse,
+  queryTitle: string,
+): void => {
+  if (document.getElementById(JUSTWATCH_CARD_ID)) return;
+
+  const { results, jellyseerrEnabled, serverType, jellyseerrUrl, error } =
+    response.payload;
+
+  const serverLabel = serverType === "jellyfin" ? "Jellyfin" : "Emby";
+
+  /* ---------- outer card ---------- */
+  const card = document.createElement("div");
+  card.id = JUSTWATCH_CARD_ID;
+  Object.assign(card.style, {
+    fontFamily: "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    background: "linear-gradient(145deg, #1a1130 0%, #120d20 100%)",
+    border: "1px solid rgba(123, 47, 190, 0.35)",
+    borderRadius: "16px",
+    padding: "20px",
+    color: "#e8e0f0",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.45)",
+    marginBottom: "24px",
+    fontSize: "14px",
+    lineHeight: "1.5",
+  });
+
+  /* ---------- header ---------- */
+  const header = document.createElement("div");
+  Object.assign(header.style, {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    marginBottom: "14px",
+    paddingBottom: "12px",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
+  });
+  header.innerHTML = `
+    ${JELLYSEERR_LOGO}
+    <div>
+      <div style="font-weight:700;font-size:15px;color:#d0bcff;">Media Server Connector</div>
+      <div style="font-size:11px;color:#a89cc0;margin-top:2px;">Powered by Jellyseerr · ${serverLabel}</div>
+    </div>
+  `;
+  card.appendChild(header);
+
+  /* ---------- error / unconfigured states ---------- */
+  if (!jellyseerrEnabled) {
+    card.appendChild(
+      createInfoRow(
+        "⚙️",
+        "Jellyseerr not configured",
+        "Open the extension popup to set your Jellyseerr URL and API key.",
+      ),
+    );
+    appendCardToJustWatchPage(card);
+    return;
+  }
+
+  if (error) {
+    card.appendChild(createInfoRow("⚠️", "Connection error", error));
+    appendCardToJustWatchPage(card);
+    return;
+  }
+
+  if (results.length === 0) {
+    card.appendChild(
+      createInfoRow(
+        "🔍",
+        "No results",
+        `"${queryTitle}" was not found on Jellyseerr.`,
+      ),
+    );
+    appendCardToJustWatchPage(card);
+    return;
+  }
+
+  /* ---------- result cards ---------- */
+  results.forEach((item, idx) => {
+    const row = buildResultRow(item, serverLabel, jellyseerrUrl);
+    if (idx > 0) {
+      row.style.borderTop = "1px solid rgba(255,255,255,0.06)";
+      row.style.paddingTop = "12px";
+    }
+    card.appendChild(row);
+  });
+
+  appendCardToJustWatchPage(card);
+};
+
+/**
+ * Append the media connector card to the JustWatch page.
+ * Inserts before the buybox-container (the "Watch Now" / "Where to Watch"
+ * streaming offers section) so it appears at the top of that list.
+ */
+const appendCardToJustWatchPage = (card: HTMLElement): void => {
+  // Primary: insert before the buybox container
+  const buyboxContainer =
+    document.querySelector<HTMLElement>(".buybox-container");
+  if (buyboxContainer) {
+    buyboxContainer.parentElement?.insertBefore(card, buyboxContainer);
+    return;
+  }
+
+  // Fallback: insert before the buybox anchor element
+  const buyboxAnchor = document.getElementById("buybox-anchor");
+  if (buyboxAnchor) {
+    buyboxAnchor.parentElement?.insertBefore(card, buyboxAnchor);
+    return;
+  }
+
+  // Fallback: insert into the title-detail content area
+  const titleContent = document.querySelector<HTMLElement>(
+    ".title-detail__content",
+  );
+  if (titleContent) {
+    titleContent.prepend(card);
+    return;
+  }
+
+  // Last resort: insert after the hero details section
+  const heroDetails = document.querySelector<HTMLElement>(
+    ".title-detail-hero__details",
+  );
+  if (heroDetails) {
+    heroDetails.after(card);
+    return;
+  }
+
+  // Absolute fallback: prepend to main content
+  const main =
+    document.querySelector<HTMLElement>("#__layout") ??
+    document.querySelector<HTMLElement>("main") ??
+    document.body;
+  main.prepend(card);
+};
+
+/* ------------------------------------------------------------------ */
+/*  JustWatch SEARCH results — per-row "Play on" button below title   */
+/* ------------------------------------------------------------------ */
+
+const JUSTWATCH_SEARCH_BADGE_CLASS = "media-connector-jw-search-badge";
+
+/**
+ * Extract title and media type from a JustWatch search result row.
+ * The `.title-list-row__column-header` link contains an href like:
+ *   /us/movie/the-man-in-the-iron-mask
+ *   /us/tv-show/fbi
+ */
+const parseJustWatchSearchRow = (
+  row: HTMLElement,
+): { title: string; year?: number; mediaType: "movie" | "tv" } | undefined => {
+  const link = row.querySelector<HTMLAnchorElement>(
+    ".title-list-row__column-header",
+  );
+  if (!link) return undefined;
+
+  const href = link.getAttribute("href") ?? "";
+  const isMovie = /\/movie\//.test(href);
+  const isTvShow = /\/tv-show\//.test(href);
+  if (!isMovie && !isTvShow) return undefined;
+
+  // Extract title from the link text content (the anchor wraps the title text)
+  const rawTitle = link.textContent?.trim();
+  if (!rawTitle) return undefined;
+
+  // Extract and strip trailing year like "(1998)"
+  const yearMatch = rawTitle.match(/\s*\((\d{4})\)\s*$/);
+  const year = yearMatch ? parseInt(yearMatch[1], 10) : undefined;
+  const title = rawTitle.replace(/\s*\(\d{4}\)\s*$/, "").trim();
+  if (!title) return undefined;
+
+  return {
+    title,
+    year,
+    mediaType: isMovie ? "movie" : "tv",
+  };
+};
+
+/**
+ * Process a single JustWatch search result row:
+ * query Jellyseerr, then insert a wide "Play on …" button below the title.
+ */
+const processJustWatchSearchRow = async (
+  row: HTMLElement,
+  serverLabel: string,
+  serverType: string,
+): Promise<void> => {
+  // Don't double-process — check both the final badge AND the in-progress marker
+  if (row.querySelector(`.${JUSTWATCH_SEARCH_BADGE_CLASS}`)) return;
+  if (row.dataset.mcProcessing === "true") return;
+
+  // Mark as in-progress immediately to prevent re-entry during async gap
+  row.dataset.mcProcessing = "true";
+
+  const parsed = parseJustWatchSearchRow(row);
+  if (!parsed) {
+    console.log("[Media Connector] JW Search: could not parse row, skipping");
+    return;
+  }
+
+  const { title, year, mediaType } = parsed;
+  console.log(
+    "[Media Connector] JW Search: processing row:",
+    title,
+    year,
+    mediaType,
+  );
+
+  // Find the title link to insert the button after it
+  const titleLink = row.querySelector<HTMLAnchorElement>(
+    ".title-list-row__column-header",
+  );
+  if (!titleLink) {
+    console.log("[Media Connector] JW Search: no title link found for", title);
+    return;
+  }
+
+  const isJellyfin = serverType === "jellyfin";
+  const serverIcon = isJellyfin ? JELLYFIN_SVG : EMBY_SVG;
+  const serverBg = isJellyfin ? "#00A4DC" : "#52B54B";
+  const serverBgHover = isJellyfin ? "#0088B8" : "#43A047";
+
+  // Create a shimmer loading placeholder button
+  injectSkeletonKeyframes();
+  const placeholder = document.createElement("div");
+  placeholder.className = JUSTWATCH_SEARCH_BADGE_CLASS;
+  Object.assign(placeholder.style, {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    width: "100%",
+    height: "32px",
+    borderRadius: "8px",
+    marginTop: "8px",
+    marginInline: "1rem",
+    background:
+      "linear-gradient(90deg, rgba(123,47,190,0.08) 25%, rgba(123,47,190,0.18) 50%, rgba(123,47,190,0.08) 75%)",
+    backgroundSize: "800px 100%",
+    animation: "mcShimmer 1.6s ease-in-out infinite",
+  });
+  titleLink.insertAdjacentElement("afterend", placeholder);
+
+  // Query Jellyseerr
+  const response = await sendMessage<SearchJellyseerrResponse>({
+    type: "SEARCH_JELLYSEERR",
+    payload: { query: title, mediaType, year },
+  });
+
+  // Remove placeholder
+  placeholder.remove();
+
+  if (!response) {
+    console.log("[Media Connector] JW Search: no response for", title);
+    return;
+  }
+
+  const { results, jellyseerrEnabled, error } = response.payload;
+  console.log("[Media Connector] JW Search: response for", title, {
+    jellyseerrEnabled,
+    error,
+    resultCount: results.length,
+  });
+
+  if (!jellyseerrEnabled || error || results.length === 0) {
+    console.log(
+      "[Media Connector] JW Search: skipping",
+      title,
+      "- no usable results",
+    );
+    return;
+  }
+
+  // Use the first (best) result
+  const item = results[0];
+
+  // Build the wide button
+  const btn = document.createElement("a");
+  btn.className = JUSTWATCH_SEARCH_BADGE_CLASS;
+  btn.setAttribute("role", "button");
+  btn.setAttribute("tabindex", "0");
+
+  const baseBtnStyles: Partial<CSSStyleDeclaration> = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "6px 14px",
+    borderRadius: "8px",
+    marginTop: "8px",
+    marginInline: "1rem",
+    fontSize: "12px",
+    fontWeight: "600",
+    fontFamily: "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    textDecoration: "none",
+    cursor: "pointer",
+    transition: "background 0.15s, box-shadow 0.15s, transform 0.1s",
+    lineHeight: "1.4",
+    whiteSpace: "nowrap",
+    width: "fit-content",
+    maxWidth: "100%",
+  };
+
+  // Scale the SVG down to fit inside the button
+  const iconHtml = `<span style="display:inline-flex;width:18px;height:18px;flex-shrink:0;">${serverIcon.replace(/width="48" height="48"/, 'width="18" height="18"')}</span>`;
+
+  if (item.status === "available" || item.status === "partial") {
+    Object.assign(btn.style, {
+      ...baseBtnStyles,
+      background: serverBg,
+      color: "#fff",
+      boxShadow: `0 2px 8px ${serverBg}55`,
+    });
+
+    const statusNote = item.status === "partial" ? " (partial)" : "";
+    btn.innerHTML = `${iconHtml}<span>▶ Play on ${serverLabel}${statusNote}</span>`;
+
+    if (item.serverItemUrl) {
+      btn.href = item.serverItemUrl;
+      btn.target = "_blank";
+      btn.rel = "noopener";
+    }
+
+    btn.addEventListener("mouseenter", () => {
+      btn.style.background = serverBgHover;
+      btn.style.boxShadow = `0 4px 14px ${serverBg}77`;
+      btn.style.transform = "translateY(-1px)";
+    });
+    btn.addEventListener("mouseleave", () => {
+      btn.style.background = serverBg;
+      btn.style.boxShadow = `0 2px 8px ${serverBg}55`;
+      btn.style.transform = "translateY(0)";
+    });
+  } else if (item.status === "pending" || item.status === "processing") {
+    Object.assign(btn.style, {
+      ...baseBtnStyles,
+      background: "#616161",
+      color: "#ccc",
+      cursor: "default",
+    });
+    btn.innerHTML = `${iconHtml}<span>⏳ Request Pending</span>`;
+  } else {
+    // Not requested — allow requesting
+    Object.assign(btn.style, {
+      ...baseBtnStyles,
+      background: "rgba(123, 47, 190, 0.2)",
+      color: "#d0bcff",
+      border: "1px solid rgba(123, 47, 190, 0.5)",
+    });
+    btn.innerHTML = `${iconHtml}<span>＋ Request on ${serverLabel}</span>`;
+
+    btn.addEventListener("mouseenter", () => {
+      btn.style.background = "rgba(123, 47, 190, 0.35)";
+      btn.style.transform = "translateY(-1px)";
+    });
+    btn.addEventListener("mouseleave", () => {
+      btn.style.background = "rgba(123, 47, 190, 0.2)";
+      btn.style.transform = "translateY(0)";
+    });
+
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const label = btn.querySelector("span:last-child");
+      if (label) label.textContent = "Requesting…";
+      btn.style.opacity = "0.6";
+      btn.style.pointerEvents = "none";
+
+      const ok = await requestFromSidebar(item);
+
+      if (ok) {
+        if (label) label.textContent = `✓ Requested on ${serverLabel}!`;
+        btn.style.background = "#4CAF50";
+        btn.style.color = "#fff";
+        btn.style.border = "1px solid #4CAF50";
+        btn.style.opacity = "1";
+      } else {
+        if (label) label.textContent = "✗ Failed — click to retry";
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
+        setTimeout(() => {
+          if (label) label.textContent = `＋ Request on ${serverLabel}`;
+        }, 3000);
+      }
+    });
+  }
+
+  console.log(
+    "[Media Connector] JW Search: inserting button for",
+    title,
+    "status:",
+    item.status,
+  );
+  titleLink.insertAdjacentElement("afterend", btn);
+  console.log(
+    "[Media Connector] JW Search: button inserted for",
+    title,
+    "- in DOM:",
+    document.contains(btn),
+  );
+};
+
+/**
+ * JustWatch search results page init.
+ * Uses a MutationObserver to handle dynamically loaded results and SPA navigations.
+ * For each search result row, injects a wide "Play on …" / "Request on …" button
+ * below the title link.
+ */
+const initJustWatchSearch = (): void => {
+  console.log("[Media Connector] JW Search: initializing search page handler");
+  let lastUrl = window.location.href;
+  let serverLabel = "Emby";
+  let serverType = "emby";
+  let processing = false;
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const processAllRows = async (): Promise<void> => {
+    // Guard against re-entry (our own DOM writes trigger the observer)
+    if (processing) {
+      console.log("[Media Connector] JW Search: skipping — already processing");
+      return;
+    }
+    processing = true;
+
+    try {
+      // Fetch config once for server type
+      const configRes = await sendMessage<GetConfigResponse>({
+        type: "GET_CONFIG",
+      });
+      serverLabel =
+        configRes?.payload.serverType === "jellyfin" ? "Jellyfin" : "Emby";
+      serverType = configRes?.payload.serverType ?? "emby";
+
+      const rows = document.querySelectorAll<HTMLElement>(
+        ".title-list-row__row",
+      );
+
+      console.log(
+        "[Media Connector] JW Search: found",
+        rows.length,
+        "total rows",
+      );
+
+      let skipped = 0;
+      let queued = 0;
+      for (const row of rows) {
+        // Skip rows already processed or in-progress
+        if (
+          row.querySelector(`.${JUSTWATCH_SEARCH_BADGE_CLASS}`) ||
+          row.dataset.mcProcessing === "true"
+        ) {
+          skipped++;
+          continue;
+        }
+        queued++;
+        // Process each row sequentially to avoid overwhelming the API
+        await processJustWatchSearchRow(row, serverLabel, serverType);
+      }
+      console.log(
+        "[Media Connector] JW Search: processed",
+        queued,
+        "rows, skipped",
+        skipped,
+      );
+    } finally {
+      processing = false;
+    }
+  };
+
+  const scheduleProcessing = (): void => {
+    // Debounce: wait 300ms after last mutation before processing
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      processAllRows();
+    }, 300);
+  };
+
+  const onMutation = (): void => {
+    const currentUrl = window.location.href;
+
+    // SPA navigation detected
+    if (currentUrl !== lastUrl) {
+      console.log("[Media Connector] JW Search: URL changed to", currentUrl);
+      lastUrl = currentUrl;
+      // If navigated away from search, stop observing
+      if (!currentUrl.includes("/search")) return;
+      scheduleProcessing();
+      return;
+    }
+
+    // Only schedule if there are unprocessed rows
+    const rows = document.querySelectorAll<HTMLElement>(".title-list-row__row");
+    let hasNew = false;
+    for (const row of rows) {
+      if (
+        !row.querySelector(`.${JUSTWATCH_SEARCH_BADGE_CLASS}`) &&
+        row.dataset.mcProcessing !== "true"
+      ) {
+        hasNew = true;
+        break;
+      }
+    }
+    if (hasNew) {
+      scheduleProcessing();
+    }
+  };
+
+  // Initial processing
+  processAllRows();
+
+  // Observe for dynamically loaded rows (infinite scroll, pagination, SPA nav)
+  const observer = new MutationObserver(() => onMutation());
+  observer.observe(document.body, { childList: true, subtree: true });
 };
 
 const initSearchEngineSidebar = async (): Promise<void> => {

@@ -15,6 +15,7 @@ export const identifySite = (url: string): SourceSite => {
     return "amazon";
   if (hostname.includes("google.com")) return "google";
   if (hostname.includes("bing.com")) return "bing";
+  if (hostname.includes("justwatch.com")) return "justwatch";
 
   return "unknown";
 };
@@ -40,6 +41,8 @@ export const detectMedia = (): DetectedMedia | undefined => {
       return detectFromGoogle();
     case "bing":
       return detectFromBing();
+    case "justwatch":
+      return detectFromJustWatch();
     default:
       return undefined;
   }
@@ -288,7 +291,8 @@ const detectFromGoogle = (): DetectedMedia | undefined => {
   // e.g. ["FILM"] or "TVM" (TV Movie). Check for these signals.
   const kpElement = document.querySelector<HTMLElement>("[data-maindata]");
   if (kpElement) {
-    const maindata = kpElement.getAttribute("data-maindata")?.toUpperCase() ?? "";
+    const maindata =
+      kpElement.getAttribute("data-maindata")?.toUpperCase() ?? "";
     if (maindata.includes('"TV_SERIES"') || maindata.includes('"TV_SHOW"')) {
       return { type: "series", title, year };
     }
@@ -349,4 +353,120 @@ const detectFromBing = (): DetectedMedia | undefined => {
   }
 
   return undefined;
+};
+
+/**
+ * Strip JustWatch title suffixes to extract the clean media title.
+ * Common formats:
+ *   - "FBI - watch tv show streaming online"
+ *   - "One Battle After Another streaming: watch online"
+ *   - "Title - watch movie streaming online"
+ *   - "Title | JustWatch"
+ * @param raw - Raw title from og:title, document.title, etc.
+ * @returns Cleaned title or empty string
+ */
+const cleanJustWatchTitle = (raw: string): string | undefined => {
+  const cleaned = raw
+    // "Title - watch tv show streaming online" → "Title"
+    // "Title - watch movie streaming online"   → "Title"
+    .replace(/\s*[-–]\s*watch\s+(tv\s+show|movie|tv\s+series).*$/i, "")
+    // "Title streaming: watch online" → "Title"
+    .replace(/\s*streaming\s*[:.]?\s*watch.*$/i, "")
+    // "Title | JustWatch" → "Title"
+    .replace(/\s*\|\s*JustWatch$/i, "")
+    .trim();
+
+  return cleaned || undefined;
+};
+
+/**
+ * Detect media from JustWatch title pages.
+ * URL patterns:
+ *   - Movies:   /xx/movie/slug
+ *   - TV Shows: /xx/tv-show/slug
+ *
+ * JustWatch is a Vue/Nuxt SPA. Title and year are extracted from the
+ * `<meta property="og:title">` tag (e.g. "Title streaming: watch online")
+ * and from embedded Apollo/JSON state (`"originalReleaseYear":YYYY`).
+ */
+const detectFromJustWatch = (): DetectedMedia | undefined => {
+  const url = window.location.href;
+  const path = new URL(url).pathname;
+
+  // Determine media type from URL path segment
+  const isMovie = /\/movie\//.test(path);
+  const isTvShow = /\/tv-show\//.test(path);
+  if (!isMovie && !isTvShow) return undefined;
+
+  // Extract title: prefer og:title meta, fall back to document.title, then h1
+  let title: string | undefined;
+
+  const ogTitle = document
+    .querySelector<HTMLMetaElement>('meta[property="og:title"]')
+    ?.getAttribute("content");
+  if (ogTitle) {
+    // Strip common JustWatch suffixes:
+    //   "Title streaming: watch online"
+    //   "Title - watch tv show streaming online"
+    //   "Title - watch movie streaming online"
+    //   "Title | JustWatch"
+    title = cleanJustWatchTitle(ogTitle);
+  }
+
+  if (!title) {
+    title = cleanJustWatchTitle(document.title ?? "");
+  }
+
+  if (!title) {
+    // Try the hero title element (Vue scoped, but the class is stable)
+    const heroTitle = document.querySelector("h1");
+    title = heroTitle?.textContent?.trim();
+  }
+
+  if (!title) return undefined;
+
+  // Extract year: look in the embedded JSON state for originalReleaseYear
+  let year: number | undefined;
+
+  // Try inline scripts containing Apollo cache data
+  const scripts = document.querySelectorAll("script");
+  for (const script of scripts) {
+    const text = script.textContent ?? "";
+    const yearMatch = text.match(/"originalReleaseYear"\s*:\s*(\d{4})/);
+    if (yearMatch) {
+      year = parseInt(yearMatch[1], 10);
+      break;
+    }
+  }
+
+  // Fallback: try extracting year from visible release year element
+  if (!year) {
+    const releaseYearEl = document.querySelector(".release-year");
+    if (releaseYearEl) {
+      year = extractYear(releaseYearEl.textContent ?? "");
+    }
+  }
+
+  // Fallback: try the og:title or document.title for a year in parentheses
+  if (!year && ogTitle) {
+    year = extractYear(ogTitle);
+  }
+
+  if (isMovie) {
+    return { type: "movie", title, year };
+  }
+
+  // TV show — check for season in the URL
+  // Season page: /xx/tv-show/slug/season-N
+  const seasonMatch = path.match(/\/tv-show\/[^/]+\/season-(\d+)$/);
+  if (seasonMatch) {
+    return {
+      type: "season",
+      seriesTitle: title,
+      seasonNumber: parseInt(seasonMatch[1], 10),
+      year,
+    };
+  }
+
+  return { type: "series", title, year };
 };

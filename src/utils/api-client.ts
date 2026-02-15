@@ -85,19 +85,21 @@ export const searchByProviderId = async (
   config: ExtensionConfig,
   providerId: string,
   providerName: "Imdb" | "Tmdb",
+  includeItemTypes?: string,
 ): Promise<MediaSearchResult> => {
   const baseUrl = await getResolvedBaseUrl(config);
   const params = new URLSearchParams({
     Recursive: "true",
   });
 
+  if (includeItemTypes) {
+    params.set("IncludeItemTypes", includeItemTypes);
+  }
+
   if (config.server.serverType === "emby") {
     // Emby uses AnyProviderIdEquals with format "prov.id"
     // e.g. "Tmdb.419946" or "Imdb.tt1234567"
-    params.set(
-      "AnyProviderIdEquals",
-      `${providerName}.${providerId}`,
-    );
+    params.set("AnyProviderIdEquals", `${providerName}.${providerId}`);
   } else {
     // Jellyfin uses AnyTmdbId / AnyImdbId
     params.set(`Any${providerName}Id`, providerId);
