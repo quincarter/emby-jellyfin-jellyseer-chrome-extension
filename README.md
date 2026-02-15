@@ -1,5 +1,6 @@
 [![Web Test Runner](https://github.com/quincarter/emby-chrome-extension/actions/workflows/wtr.yml/badge.svg)](https://github.com/quincarter/emby-chrome-extension/actions/workflows/wtr.yml)
 [![Vitest](https://github.com/quincarter/emby-chrome-extension/actions/workflows/vitest.yml/badge.svg)](https://github.com/quincarter/emby-chrome-extension/actions/workflows/vitest.yml)
+[![Playwright E2E](https://github.com/quincarter/emby-chrome-extension/actions/workflows/e2e.yml/badge.svg)](https://github.com/quincarter/emby-chrome-extension/actions/workflows/e2e.yml)
 [![Lint](https://github.com/quincarter/emby-chrome-extension/actions/workflows/lint.yml/badge.svg)](https://github.com/quincarter/emby-chrome-extension/actions/workflows/lint.yml)
 [![Build](https://github.com/quincarter/emby-chrome-extension/actions/workflows/build.yml/badge.svg)](https://github.com/quincarter/emby-chrome-extension/actions/workflows/build.yml)
 
@@ -43,6 +44,12 @@ yarn test:unit
 
 # Unit tests with coverage
 yarn test:unit:coverage
+
+# E2E tests (Playwright)
+yarn test:e2e
+
+# E2E tests with README report generation
+yarn test:e2e:report
 
 # Watch mode
 yarn test:unit:watch

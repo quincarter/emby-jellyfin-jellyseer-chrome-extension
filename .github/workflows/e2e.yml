@@ -1,0 +1,53 @@
+name: Playwright E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e:
+    name: E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build E2E content script bundle
+        run: npx vite build --config vite.config.e2e.ts
+
+      - name: Run Playwright E2E tests
+        run: npx playwright test
+
+      - name: Generate E2E README
+        if: always()
+        run: npx tsx scripts/generate-e2e-readme.ts
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload E2E README
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-readme
+          path: e2e/README.md
+          retention-days: 30

@@ -42,18 +42,18 @@
 
 ### Phase 4: Service Worker Migration
 
-| File       | Key Changes                                                                                                                                                                                                 |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| helpers.ts | `withTimeout` → `Effect.timeout`. Pure functions stay as-is                                                                                                                                                 |
-| index.ts   | Message routing via `Match.type` (pattern matching). Each handler becomes an Effect program. `Effect.runPromise` at the `chrome.runtime.onMessage` boundary. All error handling via the typed error channel |
+| File                      | Key Changes                                                                                                                                                                                                 |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| service-worker-helpers.ts | `withTimeout` → `Effect.timeout`. Pure functions stay as-is                                                                                                                                                 |
+| index.ts                  | Message routing via `Match.type` (pattern matching). Each handler becomes an Effect program. `Effect.runPromise` at the `chrome.runtime.onMessage` boundary. All error handling via the typed error channel |
 
 ### Phase 5: Content Scripts (light touch)
 
-| File            | Key Changes                                                                                                                       |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| detect-media.ts | Return `Option<DetectedMedia>` instead of `DetectedMedia \| undefined`                                                            |
-| helpers.ts      | `buildCheckPayload` → `Effect.fail` instead of `throw`                                                                            |
-| index.ts        | Minimal changes — `Effect.runPromise` at async boundaries. This is mostly DOM manipulation, so heavy Effect adoption is low-value |
+| File                      | Key Changes                                                                                                                       |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| detect-media.ts           | Return `Option<DetectedMedia>` instead of `DetectedMedia \| undefined`                                                            |
+| content-script-helpers.ts | `buildCheckPayload` → `Effect.fail` instead of `throw`                                                                            |
+| index.ts                  | Minimal changes — `Effect.runPromise` at async boundaries. This is mostly DOM manipulation, so heavy Effect adoption is low-value |
 
 ### Phase 6: Tests
 
@@ -78,7 +78,7 @@ The Lit components (popup-view.ts, sandbox-app.ts) call utils directly. We'll ad
 4. url-resolver.ts           — depends on storage only indirectly
 5. api-client.ts             — depends on url-resolver
 6. jellyseerr-client.ts      — depends on url-resolver
-7. service-worker/helpers.ts — pure functions
+7. service-worker/service-worker-helpers.ts — pure functions
 8. service-worker/index.ts   — depends on everything above
 9. content-scripts/*         — independent leaf
 10. tests                    — after each file conversion

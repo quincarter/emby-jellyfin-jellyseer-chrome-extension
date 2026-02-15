@@ -1,6 +1,6 @@
 import { Option, Effect } from 'effect';
 import { detectMediaOption, identifySite } from './detect-media.js';
-import { buildCheckPayloadEffect } from './helpers.js';
+import { buildCheckPayloadEffect } from './content-script-helpers.js';
 import type {
   CheckMediaResponse,
   GetConfigResponse,

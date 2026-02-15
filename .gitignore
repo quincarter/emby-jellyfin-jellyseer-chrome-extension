@@ -9,9 +9,12 @@ lerna-debug.log*
 
 .history
 coverage/
+test-results/
+playwright-report/
 
 node_modules
 dist
+dist-e2e
 dist-ssr
 *.local
 

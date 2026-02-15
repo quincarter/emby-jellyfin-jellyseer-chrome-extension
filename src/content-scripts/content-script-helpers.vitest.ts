@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Effect } from 'effect';
-import { buildCheckPayload, buildCheckPayloadEffect } from './helpers.js';
+import { buildCheckPayload, buildCheckPayloadEffect } from './content-script-helpers.js';
 import type { DetectedMedia } from '../types/index.js';
 
 describe('buildCheckPayload', () => {

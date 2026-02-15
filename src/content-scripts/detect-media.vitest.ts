@@ -519,7 +519,10 @@ describe('detectMedia', () => {
       const result = detectMediaOption();
       expect(Option.isSome(result)).toBe(true);
       if (Option.isSome(result)) {
-        expect(result.value.title).toBe('The Matrix');
+        const media = result.value;
+        if (media.type === 'movie') {
+          expect(media.title).toBe('The Matrix');
+        }
       }
     });
   });

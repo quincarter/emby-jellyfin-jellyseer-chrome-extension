@@ -7,7 +7,7 @@ import {
   withTimeoutFailEffect,
   buildDetectedMediaFromMessage,
   buildServerItemUrl,
-} from './helpers.js';
+} from './service-worker-helpers.js';
 
 describe('mapMediaStatus', () => {
   it('maps 5 to available', () => {

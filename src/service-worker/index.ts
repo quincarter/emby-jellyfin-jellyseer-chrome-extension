@@ -26,7 +26,7 @@ import {
   withTimeoutEffect,
   buildDetectedMediaFromMessage,
   buildServerItemUrl,
-} from './helpers.js';
+} from './service-worker-helpers.js';
 
 // ---------------------------------------------------------------------------
 // Message router — boundary layer
