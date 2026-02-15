@@ -77,19 +77,31 @@ describe('media-status-badge', () => {
     expect(text?.textContent).to.equal('Season 3 not found, but series exists');
   });
 
-  it('renders error state with message', async () => {
+  it('renders partial state with fallback text', async () => {
     const el = await fixture<MediaStatusBadge>(
-      html`<media-status-badge
-        status="error"
-        error-message="Connection timeout"
-      ></media-status-badge>`,
+      html`<media-status-badge status="partial"></media-status-badge>`,
     );
 
-    const badge = el.shadowRoot?.querySelector('.badge--error');
-    expect(badge).to.exist;
+    const text = el.shadowRoot?.querySelector('.badge-text');
+    expect(text?.textContent).to.equal('Partially Available');
+  });
+
+  it('renders error state with fallback text', async () => {
+    const el = await fixture<MediaStatusBadge>(
+      html`<media-status-badge status="error"></media-status-badge>`,
+    );
 
     const text = el.shadowRoot?.querySelector('.badge-text');
-    expect(text?.textContent).to.contain('Connection timeout');
+    expect(text?.textContent).to.equal('Error: Unknown');
+  });
+
+  it('renders nothing for unknown status', async () => {
+    const invalidStatus = 'invalid' as unknown as MediaStatusBadge['status'];
+    const el = await fixture<MediaStatusBadge>(
+      html`<media-status-badge status="invalid" .status=${invalidStatus}></media-status-badge>`,
+    );
+
+    expect(el.shadowRoot?.childElementCount).to.equal(0);
   });
 
   it('renders unconfigured state', async () => {

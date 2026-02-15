@@ -2,14 +2,19 @@ name: Publish Extension
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # This is needed for changesets to be able to push to the repo
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -20,16 +25,41 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Create Release Pull Request or Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          # This will run 'yarn changeset version' if changesets exist,
+          # or 'yarn changeset tag' if no changesets exist (after PR merge)
+          publish: yarn changeset tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build, Zip, Release and Upload only if changesets actually published (tagged)
       - name: Build extension
+        if: steps.changesets.outputs.published == 'true'
         run: yarn build:extension
 
       - name: Zip extension
+        if: steps.changesets.outputs.published == 'true'
         run: |
           cd dist
           zip -r ../extension.zip .
           cd ..
 
+      - name: Create GitHub Release
+        if: steps.changesets.outputs.published == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          # Extract the tag from changesets output if available, or use the latest tag
+          tag_name: ${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version && format('v{0}', fromJson(steps.changesets.outputs.publishedPackages)[0].version) }}
+          files: extension.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload to Chrome Web Store
+        if: steps.changesets.outputs.published == 'true'
         uses: Klemensas/chrome-extension-upload-action@v1.1
         with:
           refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
@@ -40,6 +70,7 @@ jobs:
           publish: true
 
       - name: Upload to Edge Add-ons
+        if: steps.changesets.outputs.published == 'true'
         uses: wdzeng/edge-addon@v1
         with:
           product-id: ${{ secrets.EDGE_PRODUCT_ID }}
