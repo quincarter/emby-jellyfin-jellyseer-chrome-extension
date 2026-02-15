@@ -21,21 +21,26 @@ A Chrome Extension that connects to self-hosted Emby/Jellyfin media servers, det
 ### Screenshots
 
 #### Configuration
+
 <img width="434" height="653" alt="Screenshot 2026-02-14 at 8 32 41 PM" src="https://github.com/user-attachments/assets/51b7b2e7-9ab1-42dc-8128-a12a6dd85387" />
 <img width="415" height="630" alt="Screenshot 2026-02-14 at 8 32 45 PM" src="https://github.com/user-attachments/assets/de9e28e5-eca7-4d0d-afc8-594d507c7c3e" />
 
 #### Google/Bing Search
+
 <img width="1840" height="1196" alt="Screenshot 2026-02-14 at 7 19 20 PM" src="https://github.com/user-attachments/assets/2112c21c-20c4-4e7f-bb43-f1511b174360" />
 <img width="1840" height="1196" alt="Screenshot 2026-02-14 at 7 19 43 PM" src="https://github.com/user-attachments/assets/5ff73323-9aae-41ae-a912-91cd9e70a668" />
 <img width="1260" height="648" alt="Screenshot 2026-02-14 at 8 31 17 PM" src="https://github.com/user-attachments/assets/8e8600c9-e6be-4fe5-bfa2-880b5ff2e764" />
 
 #### IMDB
+
 <img width="976" height="1196" alt="Screenshot 2026-02-14 at 7 19 02 PM" src="https://github.com/user-attachments/assets/bd663df4-cd9e-474b-a1c8-253c344a2d20" />
 
 #### JustWatch
+
 <img width="1047" height="621" alt="Screenshot 2026-02-14 at 8 34 30 PM" src="https://github.com/user-attachments/assets/38a1fa10-6189-45c0-bcdd-22b596c88f53" />
 
 #### Trakt.tv
+
 <img width="1840" height="1196" alt="Screenshot 2026-02-14 at 7 20 41 PM" src="https://github.com/user-attachments/assets/28f908dc-b934-482e-9cae-ec39cbfc22f8" />
 <img width="1840" height="1196" alt="Screenshot 2026-02-14 at 8 32 05 PM" src="https://github.com/user-attachments/assets/233b3e16-d86c-4602-b51a-a62cc6661380" />
 
