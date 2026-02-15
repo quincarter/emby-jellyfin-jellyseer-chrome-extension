@@ -1,5 +1,11 @@
 # @quincarter/ive-got-this-extension
 
+## 1.0.2
+
+### Patch Changes
+
+- c85d816: updating changeset
+
 ## 1.0.1
 
 ### Patch Changes
