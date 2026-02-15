@@ -73,7 +73,8 @@ export class EmptyQueryError extends Data.TaggedError('EmptyQueryError')<{
 /**
  * No media was detected on the current page.
  */
-export class NoMediaDetectedError extends Data.TaggedError('NoMediaDetectedError')<object> {}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export class NoMediaDetectedError extends Data.TaggedError('NoMediaDetectedError')<{}> {}
 
 /**
  * A timeout occurred while waiting for a response.
