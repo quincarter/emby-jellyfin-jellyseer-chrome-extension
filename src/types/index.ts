@@ -26,3 +26,29 @@ export type {
   SaveConfigMessage,
   SaveConfigResponse,
 } from './messages.js';
+export {
+  ServerResponseError,
+  ConfigurationError,
+  NetworkError,
+  MediaNotFoundError,
+  JellyseerrError,
+  CsrfError,
+  StorageError,
+  EmptyQueryError,
+  NoMediaDetectedError,
+  TimeoutError,
+} from './errors.js';
+export {
+  ServerTypeSchema,
+  ServerConfigSchema,
+  JellyseerrConfigSchema,
+  ExtensionConfigSchema,
+  MediaServerUserDataSchema,
+  MediaServerItemSchema,
+  MediaSearchResultSchema,
+  JellyseerrSearchResponseSchema,
+  JellyseerrSearchResultSchema,
+  JellyseerrMediaInfoSchema,
+  JellyseerrMediaRequestSchema,
+  JellyseerrRequestResultSchema,
+} from './schemas.js';

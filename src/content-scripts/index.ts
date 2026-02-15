@@ -1,5 +1,6 @@
-import { detectMedia, identifySite } from './detect-media.js';
-import { buildCheckPayload } from './helpers.js';
+import { Option, Effect } from 'effect';
+import { detectMediaOption, identifySite } from './detect-media.js';
+import { buildCheckPayloadEffect } from './helpers.js';
 import type {
   CheckMediaResponse,
   GetConfigResponse,
@@ -7,6 +8,18 @@ import type {
   SearchJellyseerrResponse,
   JellyseerrResultItem,
 } from '../types/messages.js';
+
+/**
+ * Detect media from the current page, returning `undefined` when nothing is found.
+ * Wraps `detectMediaOption` for convenient use at the boundary.
+ */
+const tryDetectMedia = () => Option.getOrUndefined(detectMediaOption());
+
+/**
+ * Build a CHECK_MEDIA payload from detected media (sync boundary helper).
+ */
+const buildPayload = (media: NonNullable<ReturnType<typeof tryDetectMedia>>) =>
+  Effect.runSync(buildCheckPayloadEffect(media));
 
 /** Raw Emby SVG string for injection into non-Lit DOM. */
 const EMBY_SVG = `<svg width="48" height="48" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Emby"><path d="M256 0C114.6 0 0 114.6 0 256s114.6 256 256 256 256-114.6 256-256S397.4 0 256 0z" fill="#52B54B"/><path d="M152 130l208 126-208 126V130z" fill="#FFFFFF"/></svg>`;
@@ -53,12 +66,12 @@ const init = async (): Promise<void> => {
   }
 
   // Non-SPA sites: detect once and inject
-  const media = detectMedia();
+  const media = tryDetectMedia();
   if (!media) return;
 
   const response = await sendMessage<CheckMediaResponse>({
     type: 'CHECK_MEDIA',
-    payload: buildCheckPayload(media),
+    payload: buildPayload(media),
   });
 
   if (response) {
@@ -84,12 +97,12 @@ const initTrakt = (): void => {
     detecting = true;
 
     try {
-      const media = detectMedia();
+      const media = tryDetectMedia();
       if (!media) return;
 
       const response = await sendMessage<CheckMediaResponse>({
         type: 'CHECK_MEDIA',
-        payload: buildCheckPayload(media),
+        payload: buildPayload(media),
       });
 
       if (response) {
@@ -498,7 +511,7 @@ const removeSkeleton = (): void => {
  * below the hero section (title + poster + video area).
  */
 const initImdb = async (): Promise<void> => {
-  const media = detectMedia();
+  const media = tryDetectMedia();
   if (!media) {
     console.log('[Media Connector] No media detected on IMDb page');
     return;
@@ -749,7 +762,7 @@ const initJustWatch = (): void => {
     detecting = true;
 
     try {
-      const media = detectMedia();
+      const media = tryDetectMedia();
       if (!media) return;
 
       const title =
@@ -1361,7 +1374,7 @@ const initJustWatchSearch = (): void => {
 };
 
 const initSearchEngineSidebar = async (): Promise<void> => {
-  const media = detectMedia();
+  const media = tryDetectMedia();
   if (!media) {
     console.log('[Media Connector] No media detected on page');
     return;
@@ -1912,7 +1925,7 @@ const injectStatusIndicator = (response: CheckMediaResponse, _mediaType: string)
  * Handle click on the request button - sends request via Jellyseerr.
  */
 const handleRequestClick = async (): Promise<void> => {
-  const media = detectMedia();
+  const media = tryDetectMedia();
   if (!media) return;
 
   const title =

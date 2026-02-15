@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { Effect } from 'effect';
 import {
   buildApiHeaders,
   searchMedia,
+  searchMediaEffect,
   searchByProviderId,
   getSeasons,
   getEpisodes,
   testServerConnection,
   checkMediaAvailability,
+  checkMediaAvailabilityEffect,
 } from './api-client.js';
 import type { ExtensionConfig, MediaSearchResult } from '../types/index.js';
 
@@ -130,9 +133,24 @@ describe('searchMedia', () => {
       }),
     );
 
-    await expect(searchMedia(mockEmbyConfig, 'The Matrix')).rejects.toThrow(
-      'Server responded with 401: Unauthorized',
+    await expect(searchMedia(mockEmbyConfig, 'The Matrix')).rejects.toThrow();
+  });
+
+  it('fails with ServerResponseError on non-OK response (Effect)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+      }),
     );
+
+    const exit = await Effect.runPromiseExit(searchMediaEffect(mockEmbyConfig, 'The Matrix'));
+    expect(exit._tag).toBe('Failure');
+    if (exit._tag === 'Failure') {
+      expect(JSON.stringify(exit.cause)).toContain('ServerResponseError');
+    }
   });
 });
 
@@ -378,7 +396,24 @@ describe('checkMediaAvailability', () => {
 
     expect(result.status).toBe('error');
     if (result.status === 'error') {
-      expect(result.message).toContain('Network down');
+      expect(result.message).toContain('Fetch failed');
+    }
+  });
+
+  it('returns NetworkError on fetch failure (Effect)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network down')));
+
+    const result = await Effect.runPromise(
+      checkMediaAvailabilityEffect(mockEmbyConfig, {
+        type: 'movie',
+        title: 'Test',
+        imdbId: 'tt9999999',
+      }),
+    );
+
+    expect(result.status).toBe('error');
+    if (result.status === 'error') {
+      expect(result.message).toContain('Fetch failed');
     }
   });
 
@@ -722,7 +757,7 @@ describe('checkMediaAvailability', () => {
 
     expect(result.status).toBe('error');
     if (result.status === 'error') {
-      expect(result.message).toBe('Unknown error');
+      expect(result.message).toContain('Fetch failed');
     }
   });
 

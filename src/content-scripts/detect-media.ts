@@ -1,3 +1,4 @@
+import { Option } from 'effect';
 import type { DetectedMedia, SourceSite } from '../types/index.js';
 
 /**
@@ -23,6 +24,7 @@ export const identifySite = (url: string): SourceSite => {
  * Detect media metadata from the current page.
  * Dispatches to site-specific detectors.
  * @returns Detected media info or undefined if no media found
+ * @deprecated Prefer `detectMediaOption` for new code.
  */
 export const detectMedia = (): DetectedMedia | undefined => {
   const site = identifySite(window.location.href);
@@ -46,6 +48,14 @@ export const detectMedia = (): DetectedMedia | undefined => {
       return undefined;
   }
 };
+
+/**
+ * Detect media metadata from the current page.
+ * Returns `Option<DetectedMedia>` — `Option.some` when media is found,
+ * `Option.none()` otherwise.
+ */
+export const detectMediaOption = (): Option.Option<DetectedMedia> =>
+  Option.fromNullable(detectMedia());
 
 /**
  * Extract IMDb ID from URL.

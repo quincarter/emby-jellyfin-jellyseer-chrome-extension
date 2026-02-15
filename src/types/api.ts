@@ -46,7 +46,7 @@ export interface MediaServerUserData {
  * Search results wrapper from Emby/Jellyfin.
  */
 export interface MediaSearchResult {
-  readonly Items: MediaServerItem[];
+  readonly Items: readonly MediaServerItem[];
   readonly TotalRecordCount: number;
 }
 

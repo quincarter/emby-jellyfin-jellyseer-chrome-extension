@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { loadConfig, saveConfig, clearConfig } from './storage.js';
+import { Effect } from 'effect';
+import {
+  loadConfig,
+  saveConfig,
+  clearConfig,
+  loadConfigEffect,
+  saveConfigEffect,
+  clearConfigEffect,
+} from './storage.js';
 import { DEFAULT_CONFIG } from '../types/index.js';
 import type { ExtensionConfig } from '../types/index.js';
 
@@ -243,5 +251,85 @@ describe('storage (chrome.storage.local)', () => {
     await saveConfig(savedConfig);
     const loaded = await loadConfig();
     expect(loaded).toEqual(savedConfig);
+  });
+});
+
+describe('storage Effect programs (localStorage fallback)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('loadConfigEffect returns DEFAULT_CONFIG when nothing stored', async () => {
+    const config = await Effect.runPromise(loadConfigEffect);
+    expect(config).toEqual(DEFAULT_CONFIG);
+  });
+
+  it('saveConfigEffect persists config', async () => {
+    const config: ExtensionConfig = {
+      server: {
+        serverType: 'emby',
+        serverUrl: 'https://emby.effect.com',
+        localServerUrl: '',
+        apiKey: 'effect-key',
+      },
+      jellyseerr: {
+        enabled: false,
+        serverUrl: '',
+        localServerUrl: '',
+        apiKey: '',
+      },
+    };
+
+    await Effect.runPromise(saveConfigEffect(config));
+    const stored = JSON.parse(localStorage.getItem('mediaConnectorConfig')!);
+    expect(stored.server.apiKey).toBe('effect-key');
+  });
+
+  it('clearConfigEffect removes stored config', async () => {
+    const config: ExtensionConfig = {
+      server: {
+        serverType: 'emby',
+        serverUrl: 'https://test.com',
+        localServerUrl: '',
+        apiKey: 'key',
+      },
+      jellyseerr: {
+        enabled: false,
+        serverUrl: '',
+        localServerUrl: '',
+        apiKey: '',
+      },
+    };
+
+    await Effect.runPromise(saveConfigEffect(config));
+    expect(localStorage.getItem('mediaConnectorConfig')).not.toBeNull();
+
+    await Effect.runPromise(clearConfigEffect);
+    expect(localStorage.getItem('mediaConnectorConfig')).toBeNull();
+  });
+
+  it('Effect round-trip: save then load returns same config', async () => {
+    const config: ExtensionConfig = {
+      server: {
+        serverType: 'jellyfin',
+        serverUrl: 'https://jf.effect.com',
+        localServerUrl: '',
+        apiKey: 'round-trip-effect',
+      },
+      jellyseerr: {
+        enabled: true,
+        serverUrl: 'https://js.effect.com',
+        localServerUrl: '',
+        apiKey: 'js-effect',
+      },
+    };
+
+    await Effect.runPromise(saveConfigEffect(config));
+    const loaded = await Effect.runPromise(loadConfigEffect);
+    expect(loaded).toEqual(config);
   });
 });

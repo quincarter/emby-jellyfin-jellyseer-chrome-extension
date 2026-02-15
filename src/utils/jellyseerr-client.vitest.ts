@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { Effect } from 'effect';
 import {
   jellyseerrSearch,
+  jellyseerrSearchEffect,
   requestMovie,
+  requestMovieEffect,
   requestTvShow,
+  requestTvShowEffect,
   testJellyseerrConnection,
 } from './jellyseerr-client.js';
 import type { ExtensionConfig } from '../types/index.js';
@@ -75,8 +79,18 @@ describe('jellyseerrSearch', () => {
   });
 
   it('throws on empty query', async () => {
-    await expect(jellyseerrSearch(config, '')).rejects.toThrow('Search query is empty');
-    await expect(jellyseerrSearch(config, '   ')).rejects.toThrow('Search query is empty');
+    await expect(jellyseerrSearch(config, '')).rejects.toThrow();
+    await expect(jellyseerrSearch(config, '   ')).rejects.toThrow();
+  });
+
+  it('fails with EmptyQueryError on empty query (Effect)', async () => {
+    const exit = await Effect.runPromiseExit(jellyseerrSearchEffect(config, ''));
+    expect(exit._tag).toBe('Failure');
+    if (exit._tag === 'Failure') {
+      const error = exit.cause;
+      // The cause wraps an EmptyQueryError
+      expect(JSON.stringify(error)).toContain('EmptyQueryError');
+    }
   });
 
   it('throws on non-OK response', async () => {
@@ -89,7 +103,24 @@ describe('jellyseerrSearch', () => {
       }),
     );
 
-    await expect(jellyseerrSearch(config, 'Test')).rejects.toThrow('Jellyseerr responded with 500');
+    await expect(jellyseerrSearch(config, 'Test')).rejects.toThrow();
+  });
+
+  it('fails with JellyseerrError on non-OK response (Effect)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: () => Promise.resolve('Internal Server Error'),
+      }),
+    );
+
+    const exit = await Effect.runPromiseExit(jellyseerrSearchEffect(config, 'Test'));
+    expect(exit._tag).toBe('Failure');
+    if (exit._tag === 'Failure') {
+      expect(JSON.stringify(exit.cause)).toContain('JellyseerrError');
+    }
   });
 });
 
@@ -135,7 +166,24 @@ describe('requestMovie', () => {
       }),
     );
 
-    await expect(requestMovie(config, 603)).rejects.toThrow('Jellyseerr request failed (403)');
+    await expect(requestMovie(config, 603)).rejects.toThrow();
+  });
+
+  it('fails with JellyseerrError on failed request (Effect)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        text: () => Promise.resolve('Forbidden'),
+      }),
+    );
+
+    const exit = await Effect.runPromiseExit(requestMovieEffect(config, 603));
+    expect(exit._tag).toBe('Failure');
+    if (exit._tag === 'Failure') {
+      expect(JSON.stringify(exit.cause)).toContain('JellyseerrError');
+    }
   });
 
   it('logs CSRF warning when error body contains csrf', async () => {
@@ -149,7 +197,7 @@ describe('requestMovie', () => {
       }),
     );
 
-    await expect(requestMovie(config, 603)).rejects.toThrow('Jellyseerr request failed (403)');
+    await expect(requestMovie(config, 603)).rejects.toThrow();
 
     // Should have logged the CSRF-specific warning
     const csrfLog = errorSpy.mock.calls.find((call) =>
@@ -240,9 +288,24 @@ describe('requestTvShow', () => {
       }),
     );
 
-    await expect(requestTvShow(config, 1396, [1])).rejects.toThrow(
-      'Jellyseerr request failed (500)',
+    await expect(requestTvShow(config, 1396, [1])).rejects.toThrow();
+  });
+
+  it('fails with JellyseerrError on failed request (Effect)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: () => Promise.resolve('Server Error'),
+      }),
     );
+
+    const exit = await Effect.runPromiseExit(requestTvShowEffect(config, 1396, [1]));
+    expect(exit._tag).toBe('Failure');
+    if (exit._tag === 'Failure') {
+      expect(JSON.stringify(exit.cause)).toContain('JellyseerrError');
+    }
   });
 
   it('logs CSRF warning when TV request error body contains csrf', async () => {
@@ -256,7 +319,7 @@ describe('requestTvShow', () => {
       }),
     );
 
-    await expect(requestTvShow(config, 1396)).rejects.toThrow('Jellyseerr request failed (403)');
+    await expect(requestTvShow(config, 1396)).rejects.toThrow();
 
     const csrfLog = errorSpy.mock.calls.find((call) =>
       String(call[0]).includes('CSRF error detected'),

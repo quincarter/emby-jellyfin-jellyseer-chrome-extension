@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import { Effect } from 'effect';
 import {
   mapMediaStatus,
   withTimeout,
+  withTimeoutEffect,
+  withTimeoutFailEffect,
   buildDetectedMediaFromMessage,
   buildServerItemUrl,
 } from './helpers.js';
@@ -58,6 +61,41 @@ describe('withTimeout', () => {
     const obj = { id: 1, name: 'test' };
     const result = await withTimeout(Promise.resolve(obj), 1000);
     expect(result).toEqual(obj);
+  });
+});
+
+describe('withTimeoutEffect', () => {
+  it('returns value when effect succeeds before timeout', async () => {
+    const result = await Effect.runPromise(withTimeoutEffect(Effect.succeed('done'), 1000));
+    expect(result).toBe('done');
+  });
+
+  it('returns undefined when timeout fires first', async () => {
+    const slowEffect = Effect.promise(
+      () => new Promise<string>((resolve) => setTimeout(() => resolve('slow'), 1000)),
+    );
+    const result = await Effect.runPromise(withTimeoutEffect(slowEffect, 10));
+    expect(result).toBeUndefined();
+  });
+});
+
+describe('withTimeoutFailEffect', () => {
+  it('returns value when effect succeeds before timeout', async () => {
+    const result = await Effect.runPromise(
+      withTimeoutFailEffect(Effect.succeed('done'), 1000, 'test-op'),
+    );
+    expect(result).toBe('done');
+  });
+
+  it('fails with TimeoutError when timeout fires first', async () => {
+    const slowEffect = Effect.promise(
+      () => new Promise<string>((resolve) => setTimeout(() => resolve('slow'), 1000)),
+    );
+    const exit = await Effect.runPromiseExit(withTimeoutFailEffect(slowEffect, 10, 'test-op'));
+    expect(exit._tag).toBe('Failure');
+    if (exit._tag === 'Failure') {
+      expect(JSON.stringify(exit.cause)).toContain('TimeoutError');
+    }
   });
 });
 

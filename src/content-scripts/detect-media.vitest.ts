@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { identifySite, detectMedia } from './detect-media.js';
+import { Option } from 'effect';
+import { identifySite, detectMedia, detectMediaOption } from './detect-media.js';
 
 describe('identifySite', () => {
   it('identifies IMDb', () => {
@@ -485,6 +486,41 @@ describe('detectMedia', () => {
 
       const result = detectMedia();
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('detectMediaOption', () => {
+    it('returns Option.none for unsupported sites', () => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://www.example.com'),
+        writable: true,
+        configurable: true,
+      });
+
+      const result = detectMediaOption();
+      expect(Option.isNone(result)).toBe(true);
+    });
+
+    it('returns Option.some for IMDb movie page', () => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://www.imdb.com/title/tt0133093/'),
+        writable: true,
+        configurable: true,
+      });
+
+      document.body.innerHTML = `
+        <div data-testid="hero__pageTitle"><span>The Matrix</span></div>
+        <div data-testid="hero-title-block__metadata">
+          <li>1999</li>
+          <span>1h 56m</span>
+        </div>
+      `;
+
+      const result = detectMediaOption();
+      expect(Option.isSome(result)).toBe(true);
+      if (Option.isSome(result)) {
+        expect(result.value.title).toBe('The Matrix');
+      }
     });
   });
 });

@@ -1,9 +1,10 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { Effect } from 'effect';
 import { sandboxAppStyles } from './sandbox-app.styles.js';
 import { mockScenarios } from './mock-data.js';
-import { checkMediaAvailability, testServerConnection } from '../utils/api-client.js';
-import { loadConfig } from '../utils/storage.js';
+import { checkMediaAvailabilityEffect, testServerConnectionEffect } from '../utils/api-client.js';
+import { loadConfigEffect } from '../utils/storage.js';
 import type { ExtensionConfig, DetectedMedia, MediaAvailability } from '../types/index.js';
 import { DEFAULT_CONFIG } from '../types/index.js';
 import '../components/media-status-badge/media-status-badge.js';
@@ -45,7 +46,7 @@ export class SandboxApp extends LitElement {
 
   override async connectedCallback(): Promise<void> {
     super.connectedCallback();
-    this._config = await loadConfig();
+    this._config = await Effect.runPromise(loadConfigEffect);
   }
 
   render() {
@@ -226,13 +227,13 @@ export class SandboxApp extends LitElement {
       imdbId: this._searchImdbId || undefined,
     };
 
-    this._realResult = await checkMediaAvailability(this._config, media);
+    this._realResult = await Effect.runPromise(checkMediaAvailabilityEffect(this._config, media));
   }
 
   private async _handleTestConnection(): Promise<void> {
     this._connectionTestResult = 'Testing connection...';
     try {
-      const ok = await testServerConnection(this._config);
+      const ok = await Effect.runPromise(testServerConnectionEffect(this._config));
       this._connectionTestResult = ok
         ? 'Connection successful!'
         : 'Connection failed. Check your settings.';

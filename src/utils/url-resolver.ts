@@ -1,4 +1,7 @@
+import { Effect, Layer } from 'effect';
 import type { ExtensionConfig } from '../types/index.js';
+import { NetworkError } from '../types/errors.js';
+import { UrlResolverService } from '../services/index.js';
 
 /**
  * Cached resolved URL and its expiry timestamp.
@@ -24,115 +27,107 @@ const resolvedCache = new Map<string, ResolvedUrlCache>();
  */
 const buildCacheKey = (localUrl: string, publicUrl: string): string => `${localUrl}|${publicUrl}`;
 
+// ---------------------------------------------------------------------------
+// Effect-based implementations
+// ---------------------------------------------------------------------------
+
 /**
  * Probe whether a URL is reachable by hitting a health-check endpoint.
- * Uses a short timeout to avoid blocking on unreachable local addresses.
- *
- * @param url - The server base URL to probe
- * @param probePath - The path to GET for the health check (default: `/System/Info/Public`)
- * @param timeoutMs - Max time to wait for a response
- * @returns True if the server responded with HTTP 200
+ * Returns an `Effect<boolean>` that never fails — unreachable → `false`.
  */
-export const probeServerUrl = async (
+export const probeServerUrlEffect = (
   url: string,
   probePath = '/System/Info/Public',
   timeoutMs = LOCAL_PROBE_TIMEOUT_MS,
-): Promise<boolean> => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const baseUrl = url.replace(/\/$/, '');
-    const response = await fetch(`${baseUrl}${probePath}`, {
-      signal: controller.signal,
-      headers: { Accept: 'application/json' },
-      credentials: 'omit',
-    });
-    return response.ok;
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timer);
-  }
-};
+): Effect.Effect<boolean> =>
+  Effect.tryPromise({
+    try: async () => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const baseUrl = url.replace(/\/$/, '');
+        const response = await fetch(`${baseUrl}${probePath}`, {
+          signal: controller.signal,
+          headers: { Accept: 'application/json' },
+          credentials: 'omit',
+        });
+        return response.ok;
+      } finally {
+        clearTimeout(timer);
+      }
+    },
+    catch: () => false as never, // never reached — we handle below
+  }).pipe(Effect.catchAll(() => Effect.succeed(false)));
 
 /**
  * Resolve the best URL from a local/public pair.
  * Prefers the local/LAN URL when reachable, falling back to the public URL.
- *
- * Results are cached for {@link CACHE_TTL_MS} to avoid repeatedly probing.
- *
- * @param localUrl - The local/LAN URL
- * @param publicUrl - The public/remote URL
- * @param probePath - The endpoint path used to test reachability
- * @returns The resolved base URL (trailing slash stripped)
  */
-const resolveUrl = async (
+const resolveUrlEffect = (
   localUrl: string,
   publicUrl: string,
   probePath: string,
-): Promise<string> => {
-  const cleanPublic = publicUrl.replace(/\/$/, '');
-  const cleanLocal = localUrl.replace(/\/$/, '');
+): Effect.Effect<string, NetworkError> =>
+  Effect.gen(function* () {
+    const cleanPublic = publicUrl.replace(/\/$/, '');
+    const cleanLocal = localUrl.replace(/\/$/, '');
 
-  if (!cleanLocal) {
-    return cleanPublic;
-  }
+    if (!cleanLocal) return cleanPublic;
 
-  const cacheKey = buildCacheKey(cleanLocal, cleanPublic);
-  const cached = resolvedCache.get(cacheKey);
+    const cacheKey = buildCacheKey(cleanLocal, cleanPublic);
+    const cached = resolvedCache.get(cacheKey);
 
-  if (cached && Date.now() < cached.expiresAt) {
-    return cached.url;
-  }
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.url;
+    }
 
-  const localReachable = await probeServerUrl(cleanLocal, probePath);
+    const localReachable = yield* probeServerUrlEffect(cleanLocal, probePath);
 
-  const resolved: ResolvedUrlCache = {
-    url: localReachable ? cleanLocal : cleanPublic,
-    isLocal: localReachable,
-    expiresAt: Date.now() + CACHE_TTL_MS,
-  };
+    const resolved: ResolvedUrlCache = {
+      url: localReachable ? cleanLocal : cleanPublic,
+      isLocal: localReachable,
+      expiresAt: Date.now() + CACHE_TTL_MS,
+    };
 
-  resolvedCache.set(cacheKey, resolved);
-  return resolved.url;
-};
+    resolvedCache.set(cacheKey, resolved);
+    return resolved.url;
+  });
 
 /**
  * Resolve the best media server URL to use.
- * Prefers the local/LAN URL when reachable, falling back to the public URL.
- *
- * @param config - Extension configuration containing both URLs
- * @returns The resolved base URL (trailing slash stripped)
  */
-export const resolveServerUrl = async (config: ExtensionConfig): Promise<string> =>
-  resolveUrl(config.server.localServerUrl ?? '', config.server.serverUrl, '/System/Info/Public');
+export const resolveServerUrlEffect = (
+  config: ExtensionConfig,
+): Effect.Effect<string, NetworkError> =>
+  resolveUrlEffect(
+    config.server.localServerUrl ?? '',
+    config.server.serverUrl,
+    '/System/Info/Public',
+  );
 
 /**
  * Resolve the best Jellyseerr URL to use.
- * Prefers the local/LAN URL when reachable, falling back to the public URL.
- *
- * @param config - Extension configuration containing both URLs
- * @returns The resolved base URL (trailing slash stripped)
  */
-export const resolveJellyseerrUrl = async (config: ExtensionConfig): Promise<string> =>
-  resolveUrl(config.jellyseerr.localServerUrl ?? '', config.jellyseerr.serverUrl, '/api/v1/status');
+export const resolveJellyseerrUrlEffect = (
+  config: ExtensionConfig,
+): Effect.Effect<string, NetworkError> =>
+  resolveUrlEffect(
+    config.jellyseerr.localServerUrl ?? '',
+    config.jellyseerr.serverUrl,
+    '/api/v1/status',
+  );
 
 /**
  * Clear the resolved URL cache.
- * Useful when the user changes server settings.
  */
-export const clearResolvedUrlCache = (): void => {
+export const clearResolvedUrlCacheEffect: Effect.Effect<void> = Effect.sync(() => {
   resolvedCache.clear();
-};
+});
 
 /**
  * Check if the currently cached resolution is using the local URL.
- * @param localUrl - The local URL to check
- * @param publicUrl - The public URL to check against
- * @returns True if local URL is being used, false if public or no cache
  */
-export const isUsingLocalUrl = (localUrl: string, publicUrl: string): boolean => {
+export const isUsingLocalUrlPure = (localUrl: string, publicUrl: string): boolean => {
   const cleanLocal = localUrl.replace(/\/$/, '');
   const cleanPublic = publicUrl.replace(/\/$/, '');
 
@@ -143,3 +138,45 @@ export const isUsingLocalUrl = (localUrl: string, publicUrl: string): boolean =>
 
   return cached?.isLocal ?? false;
 };
+
+// ---------------------------------------------------------------------------
+// Layer
+// ---------------------------------------------------------------------------
+
+export const UrlResolverLive = Layer.succeed(
+  UrlResolverService,
+  UrlResolverService.of({
+    resolveServerUrl: resolveServerUrlEffect,
+    resolveJellyseerrUrl: resolveJellyseerrUrlEffect,
+    probeServerUrl: probeServerUrlEffect,
+    clearCache: clearResolvedUrlCacheEffect,
+    isUsingLocalUrl: isUsingLocalUrlPure,
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Legacy async wrappers (used by existing code / Lit components)
+// ---------------------------------------------------------------------------
+
+/** @deprecated Use `probeServerUrlEffect` */
+export const probeServerUrl = async (
+  url: string,
+  probePath = '/System/Info/Public',
+  timeoutMs = LOCAL_PROBE_TIMEOUT_MS,
+): Promise<boolean> => Effect.runPromise(probeServerUrlEffect(url, probePath, timeoutMs));
+
+/** @deprecated Use `resolveServerUrlEffect` */
+export const resolveServerUrl = async (config: ExtensionConfig): Promise<string> =>
+  Effect.runPromise(resolveServerUrlEffect(config));
+
+/** @deprecated Use `resolveJellyseerrUrlEffect` */
+export const resolveJellyseerrUrl = async (config: ExtensionConfig): Promise<string> =>
+  Effect.runPromise(resolveJellyseerrUrlEffect(config));
+
+/** @deprecated Use `clearResolvedUrlCacheEffect` */
+export const clearResolvedUrlCache = (): void => {
+  resolvedCache.clear();
+};
+
+/** @deprecated Use `isUsingLocalUrlPure` */
+export const isUsingLocalUrl = isUsingLocalUrlPure;

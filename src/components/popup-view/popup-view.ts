@@ -1,11 +1,12 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { Effect } from 'effect';
 import { ComponentMixin } from '../../mixins/component-mixin.js';
 import { popupViewStyles } from './popup-view.styles.js';
-import { loadConfig, saveConfig } from '../../utils/storage.js';
-import { testServerConnection } from '../../utils/api-client.js';
-import { testJellyseerrConnection } from '../../utils/jellyseerr-client.js';
-import { probeServerUrl, clearResolvedUrlCache } from '../../utils/url-resolver.js';
+import { loadConfigEffect, saveConfigEffect } from '../../utils/storage.js';
+import { testServerConnectionEffect } from '../../utils/api-client.js';
+import { testJellyseerrConnectionEffect } from '../../utils/jellyseerr-client.js';
+import { probeServerUrlEffect, clearResolvedUrlCacheEffect } from '../../utils/url-resolver.js';
 import { embyIcon } from '../../assets/emby-icon.svg.js';
 import { jellyfinIcon } from '../../assets/jellyfin-icon.svg.js';
 import { jellyseerrIcon } from '../../assets/jellyseerr-icon.svg.js';
@@ -72,7 +73,7 @@ export class PopupView extends ComponentMixin(LitElement) {
   }
 
   private async _loadSettings(): Promise<void> {
-    const config = await loadConfig();
+    const config = await Effect.runPromise(loadConfigEffect);
     this.config = config;
     this.serverType = config.server.serverType;
     this._serverUrl = config.server.serverUrl;
@@ -104,10 +105,10 @@ export class PopupView extends ComponentMixin(LitElement) {
   private async _handleSave(): Promise<void> {
     try {
       const config = this._buildConfig();
-      await saveConfig(config);
+      await Effect.runPromise(saveConfigEffect(config));
       this.config = config;
       // Clear URL resolution cache so the new URLs are re-evaluated
-      clearResolvedUrlCache();
+      Effect.runSync(clearResolvedUrlCacheEffect);
 
       // Request host permissions for the server and Jellyseerr URLs
       // so the service worker can use chrome.cookies and bypass CORS.
@@ -164,7 +165,7 @@ export class PopupView extends ComponentMixin(LitElement) {
     this._connectionStatus = 'testing';
     try {
       const config = this._buildConfig();
-      const ok = await testServerConnection(config);
+      const ok = await Effect.runPromise(testServerConnectionEffect(config));
       this._connectionStatus = ok ? 'success' : 'error';
     } catch {
       this._connectionStatus = 'error';
@@ -215,7 +216,7 @@ export class PopupView extends ComponentMixin(LitElement) {
 
     setStatus('probing');
     try {
-      const reachable = await probeServerUrl(url, probePath);
+      const reachable = await Effect.runPromise(probeServerUrlEffect(url, probePath));
       setStatus(reachable ? 'reachable' : 'unreachable');
     } catch {
       setStatus('unreachable');
@@ -252,7 +253,7 @@ export class PopupView extends ComponentMixin(LitElement) {
     this._jellyseerrStatus = 'testing';
     try {
       const config = this._buildConfig();
-      const ok = await testJellyseerrConnection(config);
+      const ok = await Effect.runPromise(testJellyseerrConnectionEffect(config));
       this._jellyseerrStatus = ok ? 'success' : 'error';
     } catch {
       this._jellyseerrStatus = 'error';

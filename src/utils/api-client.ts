@@ -1,3 +1,4 @@
+import { Effect } from 'effect';
 import type {
   ExtensionConfig,
   MediaServerItem,
@@ -5,7 +6,12 @@ import type {
   DetectedMedia,
   MediaAvailability,
 } from '../types/index.js';
-import { resolveServerUrl } from './url-resolver.js';
+import { ServerResponseError, NetworkError } from '../types/errors.js';
+import { resolveServerUrlEffect } from './url-resolver.js';
+
+// ---------------------------------------------------------------------------
+// Pure helpers (no Effect needed)
+// ---------------------------------------------------------------------------
 
 /**
  * Build API headers for the configured media server.
@@ -27,192 +33,262 @@ export const buildApiHeaders = (config: ExtensionConfig): Record<string, string>
   return headers;
 };
 
+// ---------------------------------------------------------------------------
+// Shared: fetch + validate response
+// ---------------------------------------------------------------------------
+
 /**
- * Resolve the best base URL for API requests.
- * Prefers local URL when reachable, falls back to public URL.
- * @param config - Extension configuration
- * @returns Resolved base URL
+ * Perform a fetch and fail with `ServerResponseError` on non-OK responses.
  */
-const getResolvedBaseUrl = async (config: ExtensionConfig): Promise<string> =>
-  resolveServerUrl(config);
+const fetchJson = <A>(
+  url: string,
+  init: RequestInit,
+): Effect.Effect<A, ServerResponseError | NetworkError> =>
+  Effect.gen(function* () {
+    const response = yield* Effect.tryPromise({
+      try: () => globalThis.fetch(url, init),
+      catch: (cause) => new NetworkError({ reason: `Fetch failed: ${url}`, cause }),
+    });
+
+    if (!response.ok) {
+      return yield* Effect.fail(
+        new ServerResponseError({
+          status: response.status,
+          statusText: response.statusText,
+          url,
+        }),
+      );
+    }
+
+    return yield* Effect.tryPromise({
+      try: () => response.json() as Promise<A>,
+      catch: (cause) => new NetworkError({ reason: `JSON parse failed: ${url}`, cause }),
+    });
+  });
+
+/**
+ * Resolve base URL as an Effect.
+ */
+const getResolvedBaseUrlEffect = (config: ExtensionConfig): Effect.Effect<string, NetworkError> =>
+  resolveServerUrlEffect(config);
+
+// ---------------------------------------------------------------------------
+// Effect-based API operations
+// ---------------------------------------------------------------------------
 
 /**
  * Search for a media item on the configured server.
- * @param config - Extension configuration
- * @param query - Search query string
- * @param type - Media type filter
- * @returns Search results from the server
  */
-export const searchMedia = async (
+export const searchMediaEffect = (
   config: ExtensionConfig,
   query: string,
   type?: 'Movie' | 'Series' | 'Season' | 'Episode',
-): Promise<MediaSearchResult> => {
-  const baseUrl = await getResolvedBaseUrl(config);
-  const params = new URLSearchParams({
-    SearchTerm: query,
-    Recursive: 'true',
-    Limit: '10',
+): Effect.Effect<MediaSearchResult, ServerResponseError | NetworkError> =>
+  Effect.gen(function* () {
+    const baseUrl = yield* getResolvedBaseUrlEffect(config);
+    const params = new URLSearchParams({
+      SearchTerm: query,
+      Recursive: 'true',
+      Limit: '10',
+    });
+
+    if (type) {
+      params.set('IncludeItemTypes', type);
+    }
+
+    return yield* fetchJson<MediaSearchResult>(`${baseUrl}/Items?${params.toString()}`, {
+      headers: buildApiHeaders(config),
+    });
   });
-
-  if (type) {
-    params.set('IncludeItemTypes', type);
-  }
-
-  const response = await fetch(`${baseUrl}/Items?${params.toString()}`, {
-    headers: buildApiHeaders(config),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-  }
-
-  return response.json() as Promise<MediaSearchResult>;
-};
 
 /**
  * Search for media by external provider ID (IMDb, TMDb).
- * @param config - Extension configuration
- * @param providerId - The provider ID value (e.g., tt1234567)
- * @param providerName - The provider name (e.g., 'Imdb', 'Tmdb')
- * @returns Matching items from the server
  */
-export const searchByProviderId = async (
+export const searchByProviderIdEffect = (
   config: ExtensionConfig,
   providerId: string,
   providerName: 'Imdb' | 'Tmdb',
   includeItemTypes?: string,
-): Promise<MediaSearchResult> => {
-  const baseUrl = await getResolvedBaseUrl(config);
-  const params = new URLSearchParams({
-    Recursive: 'true',
+): Effect.Effect<MediaSearchResult, ServerResponseError | NetworkError> =>
+  Effect.gen(function* () {
+    const baseUrl = yield* getResolvedBaseUrlEffect(config);
+    const params = new URLSearchParams({
+      Recursive: 'true',
+    });
+
+    if (includeItemTypes) {
+      params.set('IncludeItemTypes', includeItemTypes);
+    }
+
+    if (config.server.serverType === 'emby') {
+      params.set('AnyProviderIdEquals', `${providerName}.${providerId}`);
+    } else {
+      params.set(`Any${providerName}Id`, providerId);
+    }
+
+    return yield* fetchJson<MediaSearchResult>(`${baseUrl}/Items?${params.toString()}`, {
+      headers: buildApiHeaders(config),
+    });
   });
-
-  if (includeItemTypes) {
-    params.set('IncludeItemTypes', includeItemTypes);
-  }
-
-  if (config.server.serverType === 'emby') {
-    // Emby uses AnyProviderIdEquals with format "prov.id"
-    // e.g. "Tmdb.419946" or "Imdb.tt1234567"
-    params.set('AnyProviderIdEquals', `${providerName}.${providerId}`);
-  } else {
-    // Jellyfin uses AnyTmdbId / AnyImdbId
-    params.set(`Any${providerName}Id`, providerId);
-  }
-
-  const response = await fetch(`${baseUrl}/Items?${params.toString()}`, {
-    headers: buildApiHeaders(config),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-  }
-
-  return response.json() as Promise<MediaSearchResult>;
-};
 
 /**
  * Get seasons for a series.
- * @param config - Extension configuration
- * @param seriesId - The series item ID
- * @returns Seasons in the series
  */
-export const getSeasons = async (
+export const getSeasonsEffect = (
   config: ExtensionConfig,
   seriesId: string,
-): Promise<MediaSearchResult> => {
-  const baseUrl = await getResolvedBaseUrl(config);
-
-  const response = await fetch(`${baseUrl}/Shows/${seriesId}/Seasons`, {
-    headers: buildApiHeaders(config),
+): Effect.Effect<MediaSearchResult, ServerResponseError | NetworkError> =>
+  Effect.gen(function* () {
+    const baseUrl = yield* getResolvedBaseUrlEffect(config);
+    return yield* fetchJson<MediaSearchResult>(`${baseUrl}/Shows/${seriesId}/Seasons`, {
+      headers: buildApiHeaders(config),
+    });
   });
-
-  if (!response.ok) {
-    throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-  }
-
-  return response.json() as Promise<MediaSearchResult>;
-};
 
 /**
  * Get episodes for a series, optionally filtering by season.
- * @param config - Extension configuration
- * @param seriesId - The series item ID
- * @param seasonNumber - Optional season number filter
- * @returns Episodes in the series/season
  */
-export const getEpisodes = async (
+export const getEpisodesEffect = (
   config: ExtensionConfig,
   seriesId: string,
   seasonNumber?: number,
-): Promise<MediaSearchResult> => {
-  const baseUrl = await getResolvedBaseUrl(config);
-  const params = new URLSearchParams();
+): Effect.Effect<MediaSearchResult, ServerResponseError | NetworkError> =>
+  Effect.gen(function* () {
+    const baseUrl = yield* getResolvedBaseUrlEffect(config);
+    const params = new URLSearchParams();
 
-  if (seasonNumber !== undefined) {
-    params.set('Season', seasonNumber.toString());
-  }
+    if (seasonNumber !== undefined) {
+      params.set('Season', seasonNumber.toString());
+    }
 
-  const response = await fetch(`${baseUrl}/Shows/${seriesId}/Episodes?${params.toString()}`, {
-    headers: buildApiHeaders(config),
+    return yield* fetchJson<MediaSearchResult>(
+      `${baseUrl}/Shows/${seriesId}/Episodes?${params.toString()}`,
+      { headers: buildApiHeaders(config) },
+    );
   });
-
-  if (!response.ok) {
-    throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-  }
-
-  return response.json() as Promise<MediaSearchResult>;
-};
 
 /**
  * Verify connectivity to the media server.
- * @param config - Extension configuration
- * @returns True if server is reachable and credentials are valid
+ * Never fails — returns `false` on any error.
  */
-export const testServerConnection = async (config: ExtensionConfig): Promise<boolean> => {
-  try {
-    const baseUrl = await getResolvedBaseUrl(config);
-    const response = await fetch(`${baseUrl}/System/Info/Public`, {
-      headers: { Accept: 'application/json' },
+export const testServerConnectionEffect = (config: ExtensionConfig): Effect.Effect<boolean> =>
+  Effect.gen(function* () {
+    const baseUrl = yield* getResolvedBaseUrlEffect(config);
+    const response = yield* Effect.tryPromise({
+      try: () =>
+        globalThis.fetch(`${baseUrl}/System/Info/Public`, {
+          headers: { Accept: 'application/json' },
+        }),
+      catch: () => new NetworkError({ reason: 'Connection test failed' }),
     });
     return response.ok;
-  } catch {
-    return false;
-  }
-};
+  }).pipe(Effect.catchAll(() => Effect.succeed(false)));
+
+/**
+ * Resolve the best match from search results based on detected media type.
+ */
+const resolveMediaMatchEffect = (
+  config: ExtensionConfig,
+  items: readonly MediaServerItem[],
+  media: DetectedMedia,
+): Effect.Effect<MediaAvailability, ServerResponseError | NetworkError> =>
+  Effect.gen(function* () {
+    const baseUrl = yield* getResolvedBaseUrlEffect(config);
+
+    if (media.type === 'movie') {
+      const year = media.year;
+      const typeMatches = items.filter((i) => i.Type === 'Movie');
+      const match = year
+        ? (typeMatches.find(
+            (i) => i.ProductionYear !== undefined && Math.abs(i.ProductionYear - year) <= 1,
+          ) ?? (typeMatches.length > 0 ? undefined : items[0]))
+        : (typeMatches[0] ?? items[0]);
+
+      if (!match) return { status: 'unavailable' as const };
+      return { status: 'available' as const, item: match, serverUrl: baseUrl };
+    }
+
+    if (media.type === 'series') {
+      const year = media.year;
+      const typeMatches = items.filter((i) => i.Type === 'Series');
+      const match = year
+        ? (typeMatches.find(
+            (i) => i.ProductionYear !== undefined && Math.abs(i.ProductionYear - year) <= 1,
+          ) ?? (typeMatches.length > 0 ? undefined : items[0]))
+        : (typeMatches[0] ?? items[0]);
+
+      if (!match) return { status: 'unavailable' as const };
+      return { status: 'available' as const, item: match, serverUrl: baseUrl };
+    }
+
+    // For season/episode, find the series first
+    const series = items.find((i) => i.Type === 'Series');
+    if (!series) return { status: 'unavailable' as const };
+
+    if (media.type === 'season') {
+      const seasons = yield* getSeasonsEffect(config, series.Id);
+      const season = seasons.Items.find(
+        (s) => s.ParentIndexNumber === media.seasonNumber || s.IndexNumber === media.seasonNumber,
+      );
+      if (season) {
+        return { status: 'available' as const, item: season, serverUrl: baseUrl };
+      }
+      return {
+        status: 'partial' as const,
+        item: series,
+        serverUrl: baseUrl,
+        details: `Season ${media.seasonNumber} not found, but series exists`,
+      };
+    }
+
+    if (media.type === 'episode') {
+      const episodes = yield* getEpisodesEffect(config, series.Id, media.seasonNumber);
+      const episode = episodes.Items.find(
+        (ep) =>
+          ep.IndexNumber === media.episodeNumber && ep.ParentIndexNumber === media.seasonNumber,
+      );
+      if (episode) {
+        return { status: 'available' as const, item: episode, serverUrl: baseUrl };
+      }
+      return {
+        status: 'partial' as const,
+        item: series,
+        serverUrl: baseUrl,
+        details: `S${media.seasonNumber}E${media.episodeNumber} not found, but series exists`,
+      };
+    }
+
+    return { status: 'unavailable' as const };
+  });
 
 /**
  * Check media availability on the server.
- * Handles movies, series, seasons, and episodes.
- * @param config - Extension configuration
- * @param media - Detected media from the current page
- * @returns Availability status with item details if found
+ *
+ * Cascading search strategy: IMDb ID → TMDb ID → title search.
+ * Each step is an Effect that falls through if no results are found.
  */
-export const checkMediaAvailability = async (
+export const checkMediaAvailabilityEffect = (
   config: ExtensionConfig,
   media: DetectedMedia,
-): Promise<MediaAvailability> => {
-  if (!config.server.serverUrl || !config.server.apiKey) {
-    return { status: 'unconfigured' };
-  }
-
-  try {
-    let results: MediaSearchResult;
+): Effect.Effect<MediaAvailability> =>
+  Effect.gen(function* () {
+    if (!config.server.serverUrl || !config.server.apiKey) {
+      return { status: 'unconfigured' as const };
+    }
 
     // Try IMDb ID first (most reliable)
     if (media.imdbId) {
-      results = await searchByProviderId(config, media.imdbId, 'Imdb');
+      const results = yield* searchByProviderIdEffect(config, media.imdbId, 'Imdb');
       if (results.Items.length > 0) {
-        return resolveMediaMatch(config, results.Items, media);
+        return yield* resolveMediaMatchEffect(config, results.Items, media);
       }
     }
 
     // Try TMDb ID
     if (media.tmdbId) {
-      results = await searchByProviderId(config, media.tmdbId, 'Tmdb');
+      const results = yield* searchByProviderIdEffect(config, media.tmdbId, 'Tmdb');
       if (results.Items.length > 0) {
-        return resolveMediaMatch(config, results.Items, media);
+        return yield* resolveMediaMatchEffect(config, results.Items, media);
       }
     }
 
@@ -227,105 +303,65 @@ export const checkMediaAvailability = async (
       episode: 'Series',
     };
 
-    results = await searchMedia(config, title, typeMap[media.type]);
+    const results = yield* searchMediaEffect(config, title, typeMap[media.type]);
 
     if (results.Items.length === 0) {
-      return { status: 'unavailable' };
+      return { status: 'unavailable' as const };
     }
 
-    return resolveMediaMatch(config, results.Items, media);
-  } catch (e) {
-    const message = e instanceof Error ? e.message : 'Unknown error';
-    return { status: 'error', message };
-  }
-};
+    return yield* resolveMediaMatchEffect(config, results.Items, media);
+  }).pipe(
+    Effect.catchTag('ServerResponseError', (e) =>
+      Effect.succeed({
+        status: 'error' as const,
+        message: `Server responded with ${e.status}: ${e.statusText}`,
+      }),
+    ),
+    Effect.catchTag('NetworkError', (e) =>
+      Effect.succeed({ status: 'error' as const, message: e.reason }),
+    ),
+  );
 
-/**
- * Resolve the best match from search results based on detected media type.
- */
-const resolveMediaMatch = async (
+// ---------------------------------------------------------------------------
+// Legacy async wrappers (backward compatibility)
+// ---------------------------------------------------------------------------
+
+/** @deprecated Use `searchMediaEffect` */
+export const searchMedia = async (
   config: ExtensionConfig,
-  items: MediaServerItem[],
+  query: string,
+  type?: 'Movie' | 'Series' | 'Season' | 'Episode',
+): Promise<MediaSearchResult> => Effect.runPromise(searchMediaEffect(config, query, type));
+
+/** @deprecated Use `searchByProviderIdEffect` */
+export const searchByProviderId = async (
+  config: ExtensionConfig,
+  providerId: string,
+  providerName: 'Imdb' | 'Tmdb',
+  includeItemTypes?: string,
+): Promise<MediaSearchResult> =>
+  Effect.runPromise(searchByProviderIdEffect(config, providerId, providerName, includeItemTypes));
+
+/** @deprecated Use `getSeasonsEffect` */
+export const getSeasons = async (
+  config: ExtensionConfig,
+  seriesId: string,
+): Promise<MediaSearchResult> => Effect.runPromise(getSeasonsEffect(config, seriesId));
+
+/** @deprecated Use `getEpisodesEffect` */
+export const getEpisodes = async (
+  config: ExtensionConfig,
+  seriesId: string,
+  seasonNumber?: number,
+): Promise<MediaSearchResult> =>
+  Effect.runPromise(getEpisodesEffect(config, seriesId, seasonNumber));
+
+/** @deprecated Use `testServerConnectionEffect` */
+export const testServerConnection = async (config: ExtensionConfig): Promise<boolean> =>
+  Effect.runPromise(testServerConnectionEffect(config));
+
+/** @deprecated Use `checkMediaAvailabilityEffect` */
+export const checkMediaAvailability = async (
+  config: ExtensionConfig,
   media: DetectedMedia,
-): Promise<MediaAvailability> => {
-  const baseUrl = await getResolvedBaseUrl(config);
-
-  if (media.type === 'movie') {
-    const year = media.year;
-    // Prefer exact type + year match, then type-only, then first item
-    const typeMatches = items.filter((i) => i.Type === 'Movie');
-    const match = year
-      ? (typeMatches.find(
-          (i) => i.ProductionYear !== undefined && Math.abs(i.ProductionYear - year) <= 1,
-        ) ?? (typeMatches.length > 0 ? undefined : items[0]))
-      : (typeMatches[0] ?? items[0]);
-
-    if (!match) {
-      return { status: 'unavailable' };
-    }
-    return {
-      status: 'available',
-      item: match,
-      serverUrl: baseUrl,
-    };
-  }
-
-  if (media.type === 'series') {
-    const year = media.year;
-    const typeMatches = items.filter((i) => i.Type === 'Series');
-    const match = year
-      ? (typeMatches.find(
-          (i) => i.ProductionYear !== undefined && Math.abs(i.ProductionYear - year) <= 1,
-        ) ?? (typeMatches.length > 0 ? undefined : items[0]))
-      : (typeMatches[0] ?? items[0]);
-
-    if (!match) {
-      return { status: 'unavailable' };
-    }
-    return {
-      status: 'available',
-      item: match,
-      serverUrl: baseUrl,
-    };
-  }
-
-  // For season/episode, find the series first
-  const series = items.find((i) => i.Type === 'Series');
-  if (!series) {
-    return { status: 'unavailable' };
-  }
-
-  if (media.type === 'season') {
-    const seasons = await getSeasons(config, series.Id);
-    const season = seasons.Items.find(
-      (s) => s.ParentIndexNumber === media.seasonNumber || s.IndexNumber === media.seasonNumber,
-    );
-    if (season) {
-      return { status: 'available', item: season, serverUrl: baseUrl };
-    }
-    return {
-      status: 'partial',
-      item: series,
-      serverUrl: baseUrl,
-      details: `Season ${media.seasonNumber} not found, but series exists`,
-    };
-  }
-
-  if (media.type === 'episode') {
-    const episodes = await getEpisodes(config, series.Id, media.seasonNumber);
-    const episode = episodes.Items.find(
-      (ep) => ep.IndexNumber === media.episodeNumber && ep.ParentIndexNumber === media.seasonNumber,
-    );
-    if (episode) {
-      return { status: 'available', item: episode, serverUrl: baseUrl };
-    }
-    return {
-      status: 'partial',
-      item: series,
-      serverUrl: baseUrl,
-      details: `S${media.seasonNumber}E${media.episodeNumber} not found, but series exists`,
-    };
-  }
-
-  return { status: 'unavailable' };
-};
+): Promise<MediaAvailability> => Effect.runPromise(checkMediaAvailabilityEffect(config, media));

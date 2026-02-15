@@ -123,4 +123,6 @@ Tests should be run along with the build.
 Content scripts may need to be tested differently with jest or something.
 Test coverage should be 90% or above.
 
+You should be running lint/prettier after every set of changes to ensure nothing will break pre-push.
+
 use yarn to install packages
