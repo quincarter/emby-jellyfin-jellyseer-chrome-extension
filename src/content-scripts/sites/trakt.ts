@@ -27,6 +27,7 @@ export const initTrakt = (): void => {
         cachedResponse = response;
         tryInjectTraktLegacyButton(response);
         tryInjectTraktItem(response);
+        tryInjectTraktRow(response);
       }
     } finally {
       detecting = false;
@@ -48,9 +49,11 @@ export const initTrakt = (): void => {
     if (cachedResponse) {
       const wtwExists = document.getElementById('media-connector-wtw-item');
       const legacyExists = document.getElementById('media-connector-trakt-action-btn');
-      if (!wtwExists || !legacyExists) {
+      const rowExists = document.getElementById('media-connector-trakt-row');
+      if (!wtwExists || !legacyExists || !rowExists) {
         tryInjectTraktLegacyButton(cachedResponse);
         tryInjectTraktItem(cachedResponse);
+        tryInjectTraktRow(cachedResponse);
       }
       return;
     }
@@ -287,4 +290,89 @@ export const tryInjectTraktLegacyButton = (response: CheckMediaResponse): void =
 
   // Insert above the Check In button
   checkinBtn.insertAdjacentElement('beforebegin', btn);
+};
+
+/**
+ * Modern Trakt UI: Inject a row into the sidebar info section.
+ */
+export const tryInjectTraktRow = (response: CheckMediaResponse): void => {
+  const TRAKT_SIDEBAR_ROW_ID = 'media-connector-trakt-row';
+  if (document.getElementById(TRAKT_SIDEBAR_ROW_ID)) return;
+
+  const sidebar = document.querySelector('.sidebar-info');
+  if (!sidebar) return;
+
+  const serverType = response.payload.serverType ?? 'emby';
+  const serverLabel = serverType === 'jellyfin' ? 'Jellyfin' : 'Emby';
+  const logoSvg = serverType === 'jellyfin' ? JELLYFIN_SVG : EMBY_SVG;
+  const status = response.payload.status;
+
+  const row = document.createElement('div');
+  row.id = TRAKT_SIDEBAR_ROW_ID;
+  row.className = 'info-row';
+  row.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-top: 8px;';
+
+  const iconHtml = logoSvg
+    .replace(/width="48"/, 'width="18"')
+    .replace(/height="48"/, 'height="18"');
+
+  let content = `<div style="display:flex;align-items:center;">${iconHtml}</div>`;
+
+  if (status === 'available' || status === 'partial') {
+    const label = status === 'partial' ? `${serverLabel} (Partial)` : serverLabel;
+    content += `<div style="font-weight: 600;">Available on <a href="${response.payload.itemUrl}" target="_blank" style="color: #ed1c24;">${label}</a></div>`;
+  } else if (status === 'unavailable') {
+    content += `<div style="font-weight: 600;">Request with <a href="#" class="media-connector-request" style="color: #ed1c24;">Jellyseerr</a></div>`;
+  } else {
+    return;
+  }
+
+  row.innerHTML = content;
+
+  const requestLink = row.querySelector('.media-connector-request');
+  if (requestLink) {
+    requestLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleRequestClick();
+    });
+  }
+
+  sidebar.appendChild(row);
+};
+
+/**
+ * Inject a small status badge into Trakt grid items (search results/lists).
+ */
+export const injectTraktBadge = (gridItem: HTMLElement, response: CheckMediaResponse): void => {
+  if (gridItem.querySelector('.media-connector-badge')) return;
+
+  const status = response.payload.status;
+  const badge = document.createElement('div');
+  badge.className = 'media-connector-badge';
+
+  const colors = {
+    available: '#52B54B',
+    partial: '#FFA500',
+    unavailable: '#7B2FBE',
+    pending: '#9E9E9E',
+  };
+
+  const color = colors[status as keyof typeof colors] ?? '#9E9E9E';
+
+  badge.style.cssText = `
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: ${color};
+    border: 1px solid rgba(255,255,255,0.4);
+    z-index: 10;
+  `;
+
+  const poster = gridItem.querySelector('.poster, .titles');
+  if (poster) {
+    poster.appendChild(badge);
+  }
 };

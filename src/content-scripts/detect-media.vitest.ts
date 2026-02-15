@@ -239,6 +239,22 @@ describe('detectMedia', () => {
       }
     });
 
+    it('detects a series from Bing', () => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://www.bing.com/search?q=Breaking+Bad'),
+        writable: true,
+        configurable: true,
+      });
+      document.body.innerHTML = `
+        <h2 class="wpt_title">Breaking Bad</h2>
+        <span class="wpt_subtitle">2008 TV series</span>
+      `;
+      const result = detectMedia();
+      expect(result?.type).toBe('series');
+      expect(result?.title).toBe('Breaking Bad');
+      expect(result?.year).toBe(2008);
+    });
+
     it('returns undefined when no knowledge panel', () => {
       Object.defineProperty(window, 'location', {
         value: new URL('https://www.bing.com/search?q=random'),
@@ -250,6 +266,76 @@ describe('detectMedia', () => {
 
       const result = detectMedia();
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('Google detection edge cases', () => {
+    it('detects series from maindata TV_SERIES', () => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://www.google.com/search?q=Test'),
+        writable: true,
+        configurable: true,
+      });
+      document.body.innerHTML = `
+        <div data-attrid="title">Test Show</div>
+        <div data-maindata='["TV_SERIES"]'></div>
+      `;
+      const result = detectMedia();
+      expect(result?.type).toBe('series');
+    });
+
+    it('detects movie from maindata FILM', () => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://www.google.com/search?q=Test'),
+        writable: true,
+        configurable: true,
+      });
+      document.body.innerHTML = `
+        <div data-attrid="title">Test Movie</div>
+        <div data-maindata='["FILM"]'></div>
+      `;
+      const result = detectMedia();
+      expect(result?.type).toBe('movie');
+    });
+  });
+
+  describe('JustWatch cleaning and detection', () => {
+    it('cleans various JustWatch title patterns', () => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://www.justwatch.com/us/movie/test'),
+        writable: true,
+        configurable: true,
+      });
+      const meta = document.createElement('meta');
+      meta.setAttribute('property', 'og:title');
+
+      const patterns = [
+        { raw: 'Title - watch tv show streaming online', expected: 'Title' },
+        { raw: 'Title streaming: watch online', expected: 'Title' },
+        { raw: 'Title | JustWatch', expected: 'Title' },
+      ];
+
+      for (const p of patterns) {
+        meta.setAttribute('content', p.raw);
+        document.head.appendChild(meta);
+        const result = detectMedia();
+        expect(result?.title).toBe(p.expected);
+        document.head.removeChild(meta);
+      }
+    });
+
+    it('detects season from JustWatch URL', () => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://www.justwatch.com/us/tv-show/test/season-1'),
+        writable: true,
+        configurable: true,
+      });
+      document.body.innerHTML = `<h1>Test Show</h1>`;
+      const result = detectMedia();
+      expect(result?.type).toBe('season');
+      if (result?.type === 'season') {
+        expect(result?.seasonNumber).toBe(1);
+      }
     });
   });
 
@@ -327,6 +413,21 @@ describe('detectMedia', () => {
 
       const result = detectMedia();
       expect(result).toBeUndefined();
+    });
+
+    it('detects movie from JustWatch with fallback title', () => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://www.justwatch.com/us/movie/test'),
+        writable: true,
+        configurable: true,
+      });
+      // No og:title, no script
+      document.head.innerHTML = '';
+      document.body.innerHTML = '<h1>Fallback Title</h1>';
+
+      const result = detectMedia();
+      expect(result?.type).toBe('movie');
+      expect(result?.title).toBe('Fallback Title');
     });
   });
 
@@ -462,7 +563,7 @@ describe('detectMedia', () => {
       });
 
       document.body.innerHTML = `
-        <h1>The Tomorrow War</h1>
+        <h1 data-automation-id="title">The Tomorrow War</h1>
         <div data-automation-id="release-year-badge">2021</div>
       `;
 
@@ -473,6 +574,23 @@ describe('detectMedia', () => {
         expect(result!.title).toBe('The Tomorrow War');
         expect(result!.year).toBe(2021);
       }
+    });
+
+    it('detects a series from Amazon', () => {
+      Object.defineProperty(window, 'location', {
+        value: new URL('https://www.amazon.com/gp/video/detail/B07VP9V7X9'),
+        writable: true,
+        configurable: true,
+      });
+
+      document.body.innerHTML = `
+        <h1 data-automation-id="title">The Boys</h1>
+        <div data-automation-id="season-selector">Season 1</div>
+      `;
+
+      const result = detectMedia();
+      expect(result).toBeDefined();
+      expect(result!.type).toBe('series');
     });
   });
 

@@ -299,7 +299,7 @@ export const buildResultRow = (
       const manageBtn = createActionButton('Manage in Jellyseerr', '#7B2FBE', '#5E1F9B');
       manageBtn.addEventListener('click', () => {
         const url = `${jellyseerrUrl}/${slug}/${item.id}`;
-        console.log("[I've got this!] Opening via service worker:", url);
+        console.log(`[I've got this!] Opening via service worker: ${url}`);
         sendMessage({ type: 'OPEN_TAB', payload: { url } });
       });
       btnContainer.appendChild(manageBtn);
@@ -311,7 +311,7 @@ export const buildResultRow = (
       pendingBtn.style.cursor = 'pointer';
       pendingBtn.addEventListener('click', () => {
         const url = `${jellyseerrUrl}/${slug}/${item.id}`;
-        console.log("[I've got this!] Opening via service worker:", url);
+        console.log(`[I've got this!] Opening via service worker: ${url}`);
         sendMessage({ type: 'OPEN_TAB', payload: { url } });
       });
     } else {

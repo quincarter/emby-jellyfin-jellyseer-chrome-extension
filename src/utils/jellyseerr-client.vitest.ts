@@ -206,6 +206,48 @@ describe('requestMovie', () => {
     expect(csrfLog).toBeDefined();
     errorSpy.mockRestore();
   });
+
+  it('handles JSON parse failure', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.reject(new Error('Invalid JSON')),
+      }),
+    );
+
+    const exit = await Effect.runPromiseExit(requestMovieEffect(config, 603));
+    expect(exit._tag).toBe('Failure');
+    if (exit._tag === 'Failure') {
+      expect(JSON.stringify(exit.cause)).toContain('JSON parse failed');
+    }
+  });
+
+  it('clears cookies if chrome.cookies is available', async () => {
+    const mockClear = vi.fn().mockResolvedValue({});
+    const mockGetAll = vi
+      .fn()
+      .mockResolvedValue([{ domain: '.example.com', name: 'test', path: '/', secure: true }]);
+
+    vi.stubGlobal('chrome', {
+      cookies: {
+        getAll: mockGetAll,
+        remove: mockClear,
+      },
+    });
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ id: 1 }),
+      }),
+    );
+
+    await requestMovie(config, 603);
+    expect(mockGetAll).toHaveBeenCalled();
+    expect(mockClear).toHaveBeenCalledWith(expect.objectContaining({ name: 'test' }));
+  });
 });
 
 describe('requestTvShow', () => {

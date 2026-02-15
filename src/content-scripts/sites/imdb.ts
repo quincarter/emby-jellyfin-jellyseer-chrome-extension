@@ -6,7 +6,11 @@ import {
   injectSkeletonKeyframes,
 } from '../common-ui.js';
 import { tryDetectMedia } from '../index.js';
-import type { SearchJellyseerrResponse, GetConfigResponse } from '../../types/messages.js';
+import type {
+  SearchJellyseerrResponse,
+  GetConfigResponse,
+  CheckMediaResponse,
+} from '../../types/messages.js';
 
 const IMDB_SKELETON_ID = 'media-connector-imdb-skeleton';
 const IMDB_CARD_ID = 'media-connector-imdb-card';
@@ -218,4 +222,102 @@ const appendCardToImdbPage = (card: HTMLElement): void => {
   if (main) {
     main.prepend(card);
   }
+};
+
+/**
+ * Attempt to inject the IMDb card based on a CheckMediaResponse.
+ * This is used for the simplified flow where we have a direct match.
+ */
+export const tryInjectImdbCard = (response: CheckMediaResponse): void => {
+  if (document.getElementById(IMDB_CARD_ID)) return;
+
+  const status = response.payload.status;
+  const serverType = response.payload.serverType ?? 'emby';
+  const serverLabel = serverType === 'jellyfin' ? 'Jellyfin' : 'Emby';
+  const itemUrl = response.payload.itemUrl;
+
+  const card = document.createElement('div');
+  card.id = IMDB_CARD_ID;
+  Object.assign(card.style, {
+    fontFamily: "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    background: 'linear-gradient(145deg, #1a1130 0%, #120d20 100%)',
+    border: '1px solid rgba(123, 47, 190, 0.35)',
+    borderRadius: '16px',
+    padding: '20px',
+    color: '#e8e0f0',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.45)',
+    marginBlock: '1rem',
+  });
+
+  const headerHtml = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+      <div style="width:32px;height:32px;flex-shrink:0;">${COMBINED_SVG.replace(/width="48" height="48"/, 'width="32" height="32"')}</div>
+      <div>
+        <div style="font-weight:700;font-size:15px;color:#d0bcff;">I've got this!</div>
+        <div style="font-size:11px;color:#a89cc0;margin-top:2px;">${serverLabel} Status</div>
+      </div>
+    </div>
+  `;
+
+  let contentHtml = '';
+  if (status === 'available' || status === 'partial') {
+    const label = status === 'partial' ? 'Available (Partial)' : 'Available';
+    contentHtml = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:24px;">✅</div>
+        <div>
+          <div style="font-weight:600;">${label} on ${serverLabel}</div>
+          <a href="${itemUrl}" target="_blank" style="color:#d0bcff;text-decoration:underline;font-size:13px;">Play now</a>
+        </div>
+      </div>
+    `;
+  } else if (status === 'unavailable') {
+    contentHtml = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:24px;">🚀</div>
+        <div>
+          <div style="font-weight:600;">Not on ${serverLabel} yet</div>
+          <div style="font-size:13px;color:#a89cc0;">You can request this via Jellyseerr.</div>
+        </div>
+      </div>
+    `;
+  }
+
+  card.innerHTML = headerHtml + contentHtml;
+  appendCardToImdbPage(card);
+};
+
+/**
+ * Inject a status badge into IMDb poster elements.
+ */
+export const injectImdbBadge = (poster: HTMLElement, response: CheckMediaResponse): void => {
+  if (poster.querySelector('.media-connector-badge')) return;
+
+  const status = response.payload.status;
+  const badge = document.createElement('div');
+  badge.className = 'media-connector-badge';
+
+  const colors = {
+    available: '#52B54B',
+    partial: '#FFA500',
+    unavailable: '#7B2FBE',
+  };
+
+  const color = colors[status as keyof typeof colors] ?? '#9E9E9E';
+
+  badge.style.cssText = `
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: ${color};
+    border: 2px solid white;
+    z-index: 10;
+    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  `;
+
+  const target = poster.querySelector('.ipc-media') || poster;
+  target.appendChild(badge);
 };

@@ -217,3 +217,91 @@ const appendSidebarToPage = (card: HTMLDivElement): void => {
   });
   document.body.appendChild(card);
 };
+
+/**
+ * Attempt to inject a search engine card based on a CheckMediaResponse.
+ * This is used for the simplified flow where we have a direct match.
+ */
+export const tryInjectSearchEngineCard = (
+  response: import('../../types/messages.js').CheckMediaResponse,
+): void => {
+  const SEARCH_CARD_ID = 'media-connector-search-card';
+  if (document.getElementById(SEARCH_CARD_ID)) return;
+
+  const status = response.payload.status;
+  const serverType = response.payload.serverType ?? 'emby';
+  const serverLabel = serverType === 'jellyfin' ? 'Jellyfin' : 'Emby';
+  const itemUrl = response.payload.itemUrl;
+
+  const card = document.createElement('div');
+  card.id = SEARCH_CARD_ID;
+  Object.assign(card.style, {
+    fontFamily: "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    background: 'linear-gradient(145deg, #1a1130 0%, #120d20 100%)',
+    border: '1px solid rgba(123, 47, 190, 0.35)',
+    borderRadius: '16px',
+    padding: '20px',
+    color: '#e8e0f0',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.45)',
+    marginBlock: '1rem',
+    maxWidth: '360px',
+  });
+
+  const headerHtml = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+      <div style="width:32px;height:32px;flex-shrink:0;">${COMBINED_SVG.replace(/width="48" height="48"/, 'width="32" height="32"')}</div>
+      <div>
+        <div style="font-weight:700;font-size:15px;color:#d0bcff;">I've got this!</div>
+        <div style="font-size:11px;color:#a89cc0;margin-top:2px;">${serverLabel} Status</div>
+      </div>
+    </div>
+  `;
+
+  let contentHtml = '';
+  if (status === 'available' || status === 'partial') {
+    const label = status === 'partial' ? 'Available (Partial)' : 'Available';
+    contentHtml = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:24px;">✅</div>
+        <div>
+          <div style="font-weight:600;">${label} on ${serverLabel}</div>
+          <a href="${itemUrl}" target="_blank" style="color:#d0bcff;text-decoration:underline;font-size:13px;">Play now</a>
+        </div>
+      </div>
+    `;
+  } else if (status === 'unavailable') {
+    contentHtml = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:24px;">🚀</div>
+        <div>
+          <div style="font-weight:600;">Not on ${serverLabel} yet</div>
+          <div style="font-size:13px;color:#a89cc0;">Request via Jellyseerr</div>
+        </div>
+      </div>
+    `;
+  }
+
+  card.innerHTML = headerHtml + contentHtml;
+
+  // Try to find a good sidebar spot
+  const googleSidebar = document.getElementById('rhs');
+  if (googleSidebar) {
+    googleSidebar.prepend(card);
+    return;
+  }
+
+  const bingSidebar = document.getElementById('b_context');
+  if (bingSidebar) {
+    bingSidebar.prepend(card);
+    return;
+  }
+
+  // Fallback to absolute positioning if no sidebar
+  Object.assign(card.style, {
+    position: 'fixed',
+    top: '100px',
+    right: '20px',
+    zIndex: '9999',
+  });
+  document.body.appendChild(card);
+};

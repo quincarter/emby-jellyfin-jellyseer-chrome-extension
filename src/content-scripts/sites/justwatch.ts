@@ -146,16 +146,13 @@ export const initJustWatchSPA = (): void => {
     if (currentUrl !== lastUrl) {
       lastUrl = currentUrl;
       if (newPageType !== currentPageType) {
-        cleanupAll();
         currentPageType = newPageType;
+        cleanupAll();
       }
 
       if (newPageType === 'detail') {
         detailInjected = false;
-        pauseObserver();
-        document.getElementById(JUSTWATCH_CARD_ID)?.remove();
-        document.getElementById(JUSTWATCH_SKELETON_ID)?.remove();
-        resumeObserver();
+        cleanupAll();
         detectDetail();
       } else if (newPageType === 'search') {
         processSearchRows();
@@ -544,4 +541,107 @@ const processJustWatchSearchRow = async (
   }
 
   titleLink.insertAdjacentElement('afterend', btn);
+};
+
+/**
+ * Attempt to inject a JustWatch card based on a CheckMediaResponse.
+ * Used for direct match flow.
+ */
+export const tryInjectJustWatchCard = (
+  response: import('../../types/messages.js').CheckMediaResponse,
+): void => {
+  if (document.getElementById(JUSTWATCH_CARD_ID)) return;
+
+  const status = response.payload.status;
+  const serverType = response.payload.serverType ?? 'emby';
+  const serverLabel = serverType === 'jellyfin' ? 'Jellyfin' : 'Emby';
+  const itemUrl = response.payload.itemUrl;
+
+  const card = document.createElement('div');
+  card.id = JUSTWATCH_CARD_ID;
+  Object.assign(card.style, {
+    fontFamily: "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    background: 'linear-gradient(145deg, #1a1130 0%, #120d20 100%)',
+    border: '1px solid rgba(123, 47, 190, 0.35)',
+    borderRadius: '16px',
+    padding: '20px',
+    color: '#e8e0f0',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.45)',
+    marginBottom: '24px',
+  });
+
+  const headerHtml = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+      <div style="width:32px;height:32px;flex-shrink:0;">${COMBINED_SVG.replace(/width="48" height="48"/, 'width="32" height="32"')}</div>
+      <div>
+        <div style="font-weight:700;font-size:15px;color:#d0bcff;">I've got this!</div>
+        <div style="font-size:11px;color:#a89cc0;margin-top:2px;">${serverLabel} Status</div>
+      </div>
+    </div>
+  `;
+
+  let contentHtml = '';
+  if (status === 'available' || status === 'partial') {
+    const label = status === 'partial' ? 'Available (Partial)' : 'Available';
+    contentHtml = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:24px;">✅</div>
+        <div>
+          <div style="font-weight:600;">${label} on ${serverLabel}</div>
+          <a href="${itemUrl}" target="_blank" style="color:#d0bcff;text-decoration:underline;font-size:13px;">Play now</a>
+        </div>
+      </div>
+    `;
+  } else if (status === 'unavailable') {
+    contentHtml = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:24px;">🚀</div>
+        <div>
+          <div style="font-weight:600;">Not on ${serverLabel} yet</div>
+          <div style="font-size:13px;color:#a89cc0;">Request via Jellyseerr</div>
+        </div>
+      </div>
+    `;
+  }
+
+  card.innerHTML = headerHtml + contentHtml;
+  appendCardToJustWatchPage(card);
+};
+
+/**
+ * Inject a status badge into JustWatch poster elements.
+ */
+export const injectJustWatchBadge = (
+  poster: HTMLElement,
+  response: import('../../types/messages.js').CheckMediaResponse,
+): void => {
+  if (poster.querySelector('.media-connector-badge')) return;
+
+  const status = response.payload.status;
+  const badge = document.createElement('div');
+  badge.className = 'media-connector-badge';
+
+  const colors = {
+    available: '#52B54B',
+    partial: '#FFA500',
+    unavailable: '#7B2FBE',
+  };
+
+  const color = colors[status as keyof typeof colors] ?? '#9E9E9E';
+
+  badge.style.cssText = `
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: ${color};
+    border: 2px solid white;
+    z-index: 10;
+    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  `;
+
+  const target = poster.querySelector('.poster-container') || poster;
+  target.appendChild(badge);
 };
