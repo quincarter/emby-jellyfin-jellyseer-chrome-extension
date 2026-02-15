@@ -103,7 +103,20 @@ yarn test:watch
 
 ## Releasing & Publishing
 
-This project uses [Changesets](https://github.com/changesets/changesets) to automate versioning and store publishing. To release a new version to the Chrome Web Store and Edge Add-ons, follow this workflow:
+This project uses [Changesets](https://github.com/changesets/changesets) to automate versioning and store publishing.
+
+### Prerequisites
+
+To allow the automated versioning to work, you must enable the following setting in your GitHub repository:
+
+1.  Navigate to **Settings > Actions > General**.
+2.  Scroll down to **Workflow permissions**.
+3.  Check the box for **"Allow GitHub Actions to create and approve pull requests"**.
+4.  Click **Save**.
+
+### Release Workflow
+
+To release a new version to the Chrome Web Store and Edge Add-ons, follow this workflow:
 
 1.  **Create a Changeset:** Before pushing your feature branch, run the following command in your terminal:
 
