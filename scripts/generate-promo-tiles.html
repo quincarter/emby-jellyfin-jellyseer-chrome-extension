@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Media Connector Promo Tile Generator</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #120d20;
+        color: white;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+        align-items: center;
+      }
+      canvas {
+        border: 2px solid #7b2fbe;
+        border-radius: 8px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        background: #000;
+      }
+      .label {
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #d0bcff;
+      }
+      .instructions {
+        background: #1a1130;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #332a4d;
+        max-width: 600px;
+        line-height: 1.6;
+      }
+      code {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2px 4px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="instructions">
+      <h2>Instructions</h2>
+      <ol>
+        <li>Wait for the images to render below.</li>
+        <li>Right-click each canvas and select <b>"Save Image As..."</b>.</li>
+        <li>Save them as <code>small-promo.png</code> and <code>marquee-promo.png</code>.</li>
+        <li>Note: These use a solid background (no alpha) as required by Google.</li>
+      </ol>
+    </div>
+
+    <div>
+      <div class="label">Small Promo Tile (440x280)</div>
+      <canvas id="small" width="440" height="280"></canvas>
+    </div>
+
+    <div>
+      <div class="label">Marquee Promo Tile (1400x560)</div>
+      <canvas id="marquee" width="1400" height="560"></canvas>
+    </div>
+
+    <script>
+      const colors = {
+        bgStart: '#1a1130',
+        bgEnd: '#0a0814',
+        accent: '#7b2fbe',
+        text: '#ffffff',
+        subtext: '#d0bcff',
+      };
+
+      function drawTile(id, width, height, isMarquee) {
+        const canvas = document.getElementById(id);
+        const ctx = canvas.getContext('2d');
+
+        // 1. Background Gradient
+        const grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, colors.bgStart);
+        grad.addColorStop(1, colors.bgEnd);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+
+        // 2. Decorative Purple Glow
+        const circleGrad = ctx.createRadialGradient(
+          width / 2,
+          height / 2,
+          0,
+          width / 2,
+          height / 2,
+          width / 1.5,
+        );
+        circleGrad.addColorStop(0, 'rgba(123, 47, 190, 0.15)');
+        circleGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = circleGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        // 3. Text
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        if (isMarquee) {
+          // Large Marquee Text
+          ctx.font = 'bold 80px sans-serif';
+          ctx.fillStyle = colors.text;
+          ctx.fillText("I've got this!", width / 2, height / 2 - 30);
+
+          ctx.font = '30px sans-serif';
+          ctx.fillStyle = colors.subtext;
+          ctx.fillText('Media Status for Emby & Jellyfin', width / 2, height / 2 + 60);
+
+          ctx.font = '24px sans-serif';
+          ctx.globalAlpha = 0.7;
+          ctx.fillText('IMDb • Trakt • Netflix • Amazon • JustWatch', width / 2, height / 2 + 110);
+        } else {
+          // Small Promo Text
+          ctx.font = 'bold 44px sans-serif';
+          ctx.fillStyle = colors.text;
+          ctx.fillText("I've got this!", width / 2, height / 2 - 20);
+
+          ctx.font = '18px sans-serif';
+          ctx.fillStyle = colors.subtext;
+          ctx.fillText('Emby & Jellyfin Connector', width / 2, height / 2 + 30);
+        }
+
+        // 4. Accent Border (internal)
+        ctx.globalAlpha = 1.0;
+        ctx.strokeStyle = colors.accent;
+        ctx.lineWidth = isMarquee ? 20 : 10;
+        ctx.strokeRect(0, 0, width, height);
+      }
+
+      window.onload = () => {
+        drawTile('small', 440, 280, false);
+        drawTile('marquee', 1400, 560, true);
+      };
+    </script>
+  </body>
+</html>
