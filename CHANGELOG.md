@@ -1,5 +1,13 @@
 # @quincarter/ive-got-this-extension
 
+## 1.0.6
+
+### Patch Changes
+
+- 4ffe26c: updated readme and publish
+- 792de95: Added privacy policy and screenshots
+- d11eab6: fixing playwright
+
 ## 1.0.5
 
 ### Patch Changes
