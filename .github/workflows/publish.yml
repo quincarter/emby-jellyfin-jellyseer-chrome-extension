@@ -93,6 +93,7 @@ jobs:
 
       - name: Upload to Chrome Web Store
         if: (steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')) && steps.check_secrets.outputs.has_chrome == 'true'
+        continue-on-error: true
         env:
           EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
@@ -104,8 +105,7 @@ jobs:
             --client-id "$CLIENT_ID" \
             --client-secret "$CLIENT_SECRET" \
             --refresh-token "$REFRESH_TOKEN" \
-            --source "$ZIP_PATH" \
-            --auto-publish
+            --source "$ZIP_PATH"
 
       - name: Upload to Edge Add-ons
         if: (steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')) && steps.check_secrets.outputs.has_edge == 'true'
