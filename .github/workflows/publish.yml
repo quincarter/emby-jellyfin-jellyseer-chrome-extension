@@ -47,6 +47,12 @@ jobs:
         if: steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')
         run: yarn pack
 
+      - name: Check Secrets
+        id: check_secrets
+        run: |
+          echo "has_chrome=${{ secrets.CHROME_EXTENSION_ID != '' }}" >> $GITHUB_OUTPUT
+          echo "has_edge=${{ secrets.EDGE_PRODUCT_ID != '' }}" >> $GITHUB_OUTPUT
+
       - name: Get version from package.json
         if: steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')
         id: pkg_version
@@ -78,7 +84,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload to Chrome Web Store
-        if: (steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')) && secrets.CHROME_EXTENSION_ID != ''
+        if: (steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')) && steps.check_secrets.outputs.has_chrome == 'true'
         env:
           EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
@@ -94,7 +100,7 @@ jobs:
             --auto-publish
 
       - name: Upload to Edge Add-ons
-        if: (steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')) && secrets.EDGE_PRODUCT_ID != ''
+        if: (steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')) && steps.check_secrets.outputs.has_edge == 'true'
         uses: wdzeng/edge-addon@v1
         with:
           product-id: ${{ secrets.EDGE_PRODUCT_ID }}
