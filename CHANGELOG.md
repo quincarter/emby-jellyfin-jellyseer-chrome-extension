@@ -1,5 +1,11 @@
 # @quincarter/ive-got-this-extension
 
+## 1.0.8
+
+### Patch Changes
+
+- dc87e27: fixing zip. blarg
+
 ## 1.0.7
 
 ### Patch Changes
