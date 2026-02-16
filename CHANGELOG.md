@@ -1,5 +1,11 @@
 # @quincarter/ive-got-this-extension
 
+## 1.0.9
+
+### Patch Changes
+
+- 6fdddd8: Continuing on failure so we can attempt to upload edge assets
+
 ## 1.0.8
 
 ### Patch Changes
