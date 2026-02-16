@@ -34,6 +34,9 @@ Add the following secrets to your repository (**Settings > Secrets and variables
 #### Microsoft Edge Add-ons (`EDGE_...`)
 
 - `EDGE_PRODUCT_ID`: Found under **Extension management > Product identity** in the Edge Partner Center.
+
+- `EDGE_TENANT_ID`: Found under **Settings (gear) > Account settings > Tenants** (ID column).
+
 - `EDGE_CLIENT_ID` & `EDGE_CLIENT_SECRET`:
   1. Navigate to **Settings (gear) > Account settings > Overview > User management**.
   2. **Important:** You must be signed in with your **Microsoft Entra** (formerly Azure AD) account to see the correct tabs.

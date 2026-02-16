@@ -59,7 +59,7 @@ jobs:
         id: check_secrets
         run: |
           echo "has_chrome=${{ secrets.CHROME_EXTENSION_ID != '' }}" >> $GITHUB_OUTPUT
-          echo "has_edge=${{ secrets.EDGE_PRODUCT_ID != '' }}" >> $GITHUB_OUTPUT
+          echo "has_edge=${{ secrets.EDGE_PRODUCT_ID != '' && secrets.EDGE_TENANT_ID != '' }}" >> $GITHUB_OUTPUT
 
       - name: Get version from package.json
         if: steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')
@@ -115,4 +115,5 @@ jobs:
           product-id: ${{ secrets.EDGE_PRODUCT_ID }}
           client-id: ${{ secrets.EDGE_CLIENT_ID }}
           client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
+          access-token-url: https://login.microsoftonline.com/${{ secrets.EDGE_TENANT_ID }}/oauth2/v2.0/token
           zip-path: ${{ env.ZIP_PATH }}
