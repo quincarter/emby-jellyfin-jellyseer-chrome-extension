@@ -1,5 +1,11 @@
 # @quincarter/ive-got-this-extension
 
+## 1.0.7
+
+### Patch Changes
+
+- 33fbbc3: fixing chrome webstore zip
+
 ## 1.0.6
 
 ### Patch Changes
