@@ -1,5 +1,11 @@
 # @quincarter/ive-got-this-extension
 
+## 1.0.11
+
+### Patch Changes
+
+- 413124b: fixing tenant id
+
 ## 1.0.10
 
 ### Patch Changes
