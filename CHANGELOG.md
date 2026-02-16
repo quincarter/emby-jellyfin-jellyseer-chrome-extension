@@ -1,5 +1,11 @@
 # @quincarter/ive-got-this-extension
 
+## 1.0.10
+
+### Patch Changes
+
+- 57afa3a: fixing edge
+
 ## 1.0.9
 
 ### Patch Changes
