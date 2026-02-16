@@ -106,7 +106,7 @@ jobs:
             --client-secret "$CLIENT_SECRET" \
             --refresh-token "$REFRESH_TOKEN" \
             --source "$ZIP_PATH" \
-            --verbose
+            --auto-publish
 
       - name: Upload to Edge Add-ons
         if: (steps.changesets.outputs.published == 'true' || contains(github.event.head_commit.message, 'Version Packages')) && steps.check_secrets.outputs.has_edge == 'true'
@@ -115,5 +115,5 @@ jobs:
           product-id: ${{ secrets.EDGE_PRODUCT_ID }}
           client-id: ${{ secrets.EDGE_CLIENT_ID }}
           client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
-          access-token-url: https://login.microsoftonline.com/${{ secrets.EDGE_TENANT_ID }}/oauth2/v2.0/token
+          access-token-url: https://login.microsoftonline.com/${{ secrets.EDGE_TENANT_ID }}/oauth2/token
           zip-path: ${{ env.ZIP_PATH }}

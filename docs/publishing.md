@@ -72,3 +72,19 @@ To release a new version, follow these steps:
     - Update `CHANGELOG.md`.
     - Tag the repository.
     - **Trigger the Store Upload:** The `publish` workflow will run, building the extension and uploading it to both the Chrome Web Store and Microsoft Edge Add-ons store.
+
+## Troubleshooting
+
+### Chrome: `SyntaxError: Unexpected token 'C', "Could not "...`
+
+This means Google returned an HTML error page instead of JSON.
+
+- **Cause:** Usually an incorrect `CHROME_EXTENSION_ID`.
+- **Fix:** Verify the ID in the Developer Dashboard URL. Ensure no spaces are in the secret.
+
+### Edge: `AADSTS500014: The service principal ... is disabled`
+
+This means the Edge API is not active in your tenant.
+
+- **Fix 1:** Ensure you have performed at least **one manual upload** of your extension to the Edge Partner Center.
+- **Fix 2:** Go to **Azure Portal > Enterprise Applications**, filter by "All Applications", and search for ID `6243009d-3757-4865-8243-1bc4acbd0934`. Ensure it is enabled.
