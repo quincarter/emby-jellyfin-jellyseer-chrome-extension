@@ -1,5 +1,12 @@
 # @quincarter/ive-got-this-extension
 
+## 1.0.12
+
+### Patch Changes
+
+- 488ab49: fixing autopublish
+- 8cca23e: removed unused permission
+
 ## 1.0.11
 
 ### Patch Changes
