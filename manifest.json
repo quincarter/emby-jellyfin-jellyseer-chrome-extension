@@ -3,7 +3,7 @@
   "name": "I've got this!",
   "description": "Check if movies and TV shows on IMDb, Trakt, Netflix, and more are on your Emby/Jellyfin server. Integrated with Jellyseerr.",
   "version": "0.1.0",
-  "permissions": ["storage", "activeTab", "cookies"],
+  "permissions": ["storage", "cookies"],
   "optional_permissions": [],
   "optional_host_permissions": ["*://*/*"],
   "host_permissions": [
